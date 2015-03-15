@@ -10,7 +10,7 @@ struct DB {
 	/* Public API */
 	/* Returns 0 on OK, -1 on Error */
 	int (*close)(struct DB *db);
-	int (*delete)(struct DB *db, struct DBT *key);
+	int (*_delete)(struct DB *db, struct DBT *key);
 	int (*insert)(struct DB *db, struct DBT *key, struct DBT *data);
 	/* * * * * * * * * * * * * *
 	 * Returns malloc'ed data into 'struct DBT *data'.
@@ -45,6 +45,7 @@ struct DBC {
 
 /* Open DB if it exists, otherwise create DB */
 struct DB *dbopen(char *file, struct DBC *conf);
+struct DB *dbcreate(char *file, struct DBC *conf);
 
 int db_close(struct DB *db);
 int db_delete(struct DB *, void *, size_t);
@@ -52,4 +53,4 @@ int db_select(struct DB *, void *, size_t, void **, size_t *);
 int db_insert(struct DB *, void *, size_t, void * , size_t  );
 
 /* Sync cached pages with disk */
-int db_sync(const struct DB *db);
+int db_flush(const struct DB *db);
