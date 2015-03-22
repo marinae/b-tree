@@ -1,56 +1,26 @@
-#include <stddef.h>
+#ifndef __MYDB_H__
+#define __MYDB_H__
 
-/* check `man dbopen` */
-struct DBT {
-	void  *data;
-	size_t size;
-};
+#include "classes.h"
+#include "blocks.h"
+#include "database.h"
+#include <assert.h>
 
-struct DB {
-	/* Public API */
-	/* Returns 0 on OK, -1 on Error */
-	int (*close)(struct DB *db);
-	int (*_delete)(struct DB *db, struct DBT *key);
-	int (*insert)(struct DB *db, struct DBT *key, struct DBT *data);
-	/* * * * * * * * * * * * * *
-	 * Returns malloc'ed data into 'struct DBT *data'.
-	 * Caller must free data->data. 'struct DBT *data' must be alloced in
-	 * caller.
-	 * * * * * * * * * * * * * */
-	int (*select)(struct DB *db, struct DBT *key, struct DBT *data);
-	/* Sync cached pages with disk
-	 * */
-	int (*sync)(struct DB *db);
-	/* For future uses - sync cached pages with disk
-	 * int (*sync)(const struct DB *db)
-	 * */
-	/* Private API */
-	/*     ...     */
-}; /* Need for supporting multiple backends (HASH/BTREE) */
+//+----------------------------------------------------------------------------+
+//| Functions for initializing DB                                              |
+//+----------------------------------------------------------------------------+
 
-struct DBC {
-	/* Maximum on-disk file size
-	 * 512MB by default
-	 * */
-	size_t db_size;
-	/* Page (node/data) size
-	 * 4KB by default
-	 * */
-	size_t page_size;
-	/* Maximum cached memory size
-	 * 16MB by default
-	 * */
-	size_t cache_size;
-};
+struct DB *dbopen(char *file);
+struct DB *dbcreate(char *file, DBC conf);
 
-/* Open DB if it exists, otherwise create DB */
-struct DB *dbopen(char *file, struct DBC *conf);
-struct DB *dbcreate(char *file, struct DBC *conf);
+//+----------------------------------------------------------------------------+
+//| Functions calling DB API                                                   |
+//+----------------------------------------------------------------------------+
 
-int db_close(struct DB *db);
-int db_delete(struct DB *, void *, size_t);
-int db_select(struct DB *, void *, size_t, void **, size_t *);
-int db_insert(struct DB *, void *, size_t, void * , size_t  );
+int db_close(DB *db);
+int db_flush(DB *db);
+int db_delete(DB *db, void *key, size_t key_len);
+int db_select(DB *db, void *key, size_t key_len, void **val, size_t *val_len);
+int db_insert(DB *db, void *key, size_t key_len, void *val, size_t val_len);
 
-/* Sync cached pages with disk */
-int db_flush(const struct DB *db);
+#endif /* __MYDB_H__ */

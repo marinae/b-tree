@@ -1,5 +1,5 @@
 all:
-	gcc mydb.c -std=c99 -shared -fPIC -o libmydb.so
+	gcc blocks.c database.c mydb.c -std=c99 -shared -fPIC -o libmydb.so
 
 sophia:
 	make -C sophia/

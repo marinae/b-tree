@@ -38,7 +38,7 @@ public:
 	~Database();
 	int insert(const std::string &key, const std::string &val);
 	int select(const std::string &key, char **val, size_t *val_size);
-	int delete(const std::string &key);
+	int _delete(const std::string &key);
 	int close();
 };
 

@@ -78,7 +78,7 @@ int Database::select(const std::string& key, char **val, size_t *val_size) {
 	return retval;
 }
 
-int Database::delete(const std::string& key) {
+int Database::_delete(const std::string& key) {
 	int retval = this->delete_function(this->db_object, key.c_str(), key.size());
 	if (retval != 0)
 		std::cout << "Error, while deleting \"" << key << "\"\n";

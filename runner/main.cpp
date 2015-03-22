@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
 			out.write(val, val_size) << "\n";
 		} else if (op[0] == std::string("del")) {
 			clock_gettime(CLOCK_MONOTONIC, &t1);
-			retval = db->delete(op[1]);
+			retval = db->_delete(op[1]);
 			clock_gettime(CLOCK_MONOTONIC, &t2);
 			time += (t2.tv_sec - t1.tv_sec) * 1e9 + (t2.tv_nsec - t1.tv_nsec);
 		} else {

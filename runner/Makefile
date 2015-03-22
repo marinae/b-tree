@@ -1,9 +1,9 @@
 all:
 	g++ main.cpp database.cpp -lyaml-cpp -ldl -o test_speed --std=c++11 -lpthread -O2\
 		-I/usr/local/Cellar/yaml-cpp/0.5.1/include/ \
-		-I/usr/local/Cellar/boost/1.56.0/include/ \
+		-I/usr/local/Cellar/boost/1.57.0/include/ \
 		-L/usr/local/Cellar/yaml-cpp/0.5.1/lib/ \
-		-L/usr/local/Cellar/boost/1.56.0/lib/
+		-L/usr/local/Cellar/boost/1.57.0/lib/
 
 test_uni:
 	rm -rf ./mydbpath
