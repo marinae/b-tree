@@ -3,3 +3,7 @@ all:
 
 sophia:
 	make -C sophia/
+
+clean:
+	rm libmydb.so
+	rm mydbpath

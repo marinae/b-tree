@@ -10,8 +10,8 @@
 //| Functions for initializing DB                                              |
 //+----------------------------------------------------------------------------+
 
-struct DB *dbopen(char *file);
-struct DB *dbcreate(char *file, DBC conf);
+DB *dbopen(char *file);
+DB *dbcreate(char *file, DBC conf);
 
 //+----------------------------------------------------------------------------+
 //| Functions calling DB API                                                   |

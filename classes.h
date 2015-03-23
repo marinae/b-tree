@@ -90,6 +90,7 @@ typedef struct DB {
     
     /* DB parameters: file descriptor, node size, root offset, etc. */
     DB_info *info;
+    block   *root;
 } DB; /* Need for supporting multiple backends (HASH/BTREE) */
 
 //+----------------------------------------------------------------------------+

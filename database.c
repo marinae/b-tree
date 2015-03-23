@@ -1,14 +1,14 @@
 #include "database.h"
 
-// TODO: close database, delete key, insert key, select key
+// TODO: close database, delete key, insert key, select key, insert_nonfull
 
 //+----------------------------------------------------------------------------+
 //| Close database                                                             |
 //+----------------------------------------------------------------------------+
 
-int f_close(struct DB *db) {
+int f_close(DB *db) {
     /* Check params */
-    assert(db && db->info);
+    assert(db && db->info && db->root);
 
     return 0;
 }
@@ -17,9 +17,10 @@ int f_close(struct DB *db) {
 //| Delete key                                                                 |
 //+----------------------------------------------------------------------------+
 
-int f_delete(struct DB *db, struct DBT *key) {
+int f_delete(DB *db, DBT *key) {
     /* Check params */
-    assert(db && db->info && key && key->data);
+    assert(db && db->info && db->root);
+    assert(key && key->data);
 
     return 0;
 }
@@ -28,57 +29,56 @@ int f_delete(struct DB *db, struct DBT *key) {
 //| Insert key-value                                                           |
 //+----------------------------------------------------------------------------+
 
-int f_insert(struct DB *db, struct DBT *key, struct DBT *value) {
+int f_insert(DB *db, DBT *key, DBT *value) {
     /* Check params */
-    assert(db && db->info && key && key->data && value && value->data);
+    assert(db && db->info && db->root);
+    assert(key && key->data && value && value->data);
 
     /* Find place for key */
-    /* TODO: find RIGHT place for key in B-tree */
-    size_t k = db->_find_empty_block(db);
+    block *current = db->root;
 
-    /* Check if there is no free block */
-    if (k == 0)
-        return -1;
+    /* Compute free memory in block and needed memory */
+    size_t free_mem = free_space(current, db->info->block_size);
+    size_t needed_mem = sizeof(size_t) * 2 + key->size + value->size;
+    if (current->num_children > 0)
+        needed_mem += 8;
 
-    item **items = (item **)calloc(1, sizeof(item *));
-    item *one = (item *)calloc(1, sizeof(item));
-    one->key = key;
-    one->value = value;
-    items[0] = one;
+    /* Compare them */
+    if (needed_mem <= free_mem)
+        return insert_nonfull(db, current, db->info->root_index, key, value);
 
-    /* Fill new block */
-    struct block b = {
-        .num_keys = 1,
-        .items = items,
-        .num_children = 0,
-        .children = NULL
-    };
+    /* Root is full -> split root */
+    // s = allocate node
+    // root = s
+    // s.child = current
+    // split child(s)
+    // return insert_nonfull(s, key, value)
 
-    /* Write block */
-    return db->_write_block(db, k, &b);
+    return 0;
 }
 
 //+----------------------------------------------------------------------------+
 //| Select key-value                                                           |
 //+----------------------------------------------------------------------------+
 
-int f_select(struct DB *db, struct DBT *key, struct DBT *value) {
+int f_select(DB *db, DBT *key, DBT *value) {
     /* Check params */
-    assert(db && db->info && key && key->data && value);
+    assert(db && db->info && db->root);
+    assert(key && key->data && value);
 
     /* Find specific key */
     /* TODO: Returns sequence values. Do it RIGHT */
-    struct block *b = db->_read_block(db, 170);
+    /*block *b = db->_read_block(db, 170);
     if (!b)
         return -1;
 
     write(1, b->items[0]->key->data, b->items[0]->key->size);
     printf("\n");
     write(1, b->items[0]->value->data, b->items[0]->value->size);
-    printf("\n");
+    printf("\n");*/
 
     /* Free all allocated memory */
-    for (int j = 0; j < b->num_keys; ++j) {
+    /*for (int j = 0; j < b->num_keys; ++j) {
         free(b->items[j]->key->data);
         free(b->items[j]->value->data);
         free(b->items[j]->key);
@@ -87,7 +87,7 @@ int f_select(struct DB *db, struct DBT *key, struct DBT *value) {
     }
     free(b->items);
     free(b->children);
-    free(b);
+    free(b);*/
 
     return 0;
 }
@@ -96,9 +96,60 @@ int f_select(struct DB *db, struct DBT *key, struct DBT *value) {
 //| Synchronize                                                                |
 //+----------------------------------------------------------------------------+
 
-int f_sync(struct DB *db) {
+int f_sync(DB *db) {
     /* Check params */
-    assert(db && db->info);
+    assert(db && db->info && db->root);
 
     return 0;
+}
+
+//+----------------------------------------------------------------------------+
+//| Helpful functions                                                          |
+//+----------------------------------------------------------------------------+
+
+int insert_nonfull(DB *db, block *b, size_t k, DBT *key, DBT *value) {
+    /* Check params */
+    assert(db && db->info && db->root);
+    assert(key && key->data && value && value->data);
+    assert(k >= db->info->first_node && k <= db->info->num_blocks);
+
+    /* Insert key into this block or one of its children */
+    if (b->num_children == 0) {
+        /* Leaf block */
+    } else {
+        /* Non-leaf block */
+    }
+
+    /*write(1, key->data, key->size);
+    printf("\n");
+    write(1, value->data, value->size);
+    printf("\n");*/
+
+    return 0;
+}
+
+size_t free_space(block *b, size_t block_size) {
+    /* Check params */
+    assert(b);
+    assert(b->items || b->num_keys == 0);
+    assert(b->children || b->num_children == 0);
+
+    /* Busy space: */
+    /* 1. sizeof(num_keys + num_children) */
+    size_t busy = sizeof(size_t) * 2;
+
+    for (int i = 0; i < b->num_keys; ++i) {
+        /* 2. sizeof(key->size + value-> size) */
+        busy += sizeof(size_t) * 2;
+
+        /* 3. key->size */
+        busy += b->items[i]->key->size;
+
+        /* 4. value->size */
+        busy += b->items[i]->value->size;
+    }
+    /* 5. num_children * sizeof(child) */
+    busy += b->num_children * sizeof(size_t);
+
+    return block_size - busy;
 }

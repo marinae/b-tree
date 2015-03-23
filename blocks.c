@@ -6,11 +6,14 @@
 
 int write_block(struct DB *db, size_t k, struct block *b) {
     /* Check params */
-    assert(db && db->info && b && b->items);
+    assert(db && db->info && b);
+    assert(b->items || b->num_keys == 0);
+    assert(b->children || b->num_children == 0);
     assert(k >= db->info->first_node && k <= db->info->num_blocks);
 
     /* Calculate offset of block */
     size_t offset = db->info->block_size * k;
+    printf("offset: %lu\n", offset);
 
     /* Write key-value count */
     lseek(db->info->fd, offset, SEEK_SET);

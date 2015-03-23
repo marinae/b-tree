@@ -6,11 +6,11 @@
 //| Open database                                                              |
 //+----------------------------------------------------------------------------+
 
-struct DB *dbopen(char *file) {
+DB *dbopen(char *file) {
     /* Check params */
     assert(file);
 
-    struct DB *db = (struct DB *)calloc(1, sizeof(struct DB));
+    DB *db = (DB *)calloc(1, sizeof(DB));
     return db;
 }
 
@@ -18,12 +18,12 @@ struct DB *dbopen(char *file) {
 //| Create database                                                            |
 //+----------------------------------------------------------------------------+
 
-struct DB *dbcreate(char *file, struct DBC conf) {  
+DB *dbcreate(char *file, DBC conf) {  
     /* Check params */
     assert(file);
 
     /* Allocate memory for structure */
-    struct DB *db = (struct DB *)calloc(1, sizeof(struct DB));
+    DB *db = (DB *)calloc(1, sizeof(DB));
     
     /* Create file for database */
     int fd = open(file, O_CREAT | O_RDWR, S_IRWXU);
@@ -45,7 +45,7 @@ struct DB *dbcreate(char *file, struct DBC conf) {
     }
 
     /* Fill DB info */
-    struct DB_info info = {
+    DB_info info = {
         .fd            = fd,
         .block_size    = conf.page_size,
         .num_blocks    = num_blocks,
@@ -55,7 +55,7 @@ struct DB *dbcreate(char *file, struct DBC conf) {
         .first_node    = bitmap_blocks + 1,
         .root_index    = bitmap_blocks + 1
     };
-    db->info = (struct DB_info *)calloc(1, sizeof(struct DB_info));
+    db->info = (DB_info *)calloc(1, sizeof(DB_info));
     memcpy(db->info, &info, sizeof(info));
 
     /* Print DB parameters */
@@ -68,7 +68,7 @@ struct DB *dbcreate(char *file, struct DBC conf) {
     printf("root_index    = %lu\n", db->info->root_index);
     
     /* Write file header */
-    struct header hr = {
+    header hr = {
         .block_size = db->info->block_size,
         .num_blocks = db->info->num_blocks,
         .root_index = db->info->root_index
@@ -90,6 +90,16 @@ struct DB *dbcreate(char *file, struct DBC conf) {
         free(db);
         return NULL;
     }
+
+    /* Fill root info */
+    block root = {
+        .num_keys     = 0,
+        .items        = NULL,
+        .num_children = 0,
+        .children     = NULL
+    };
+    db->root = (block *)calloc(1, sizeof(block));
+    memcpy(db->root, &root, sizeof(root));
 
     /* Fill private API */
     db->_write_block      = write_block;
