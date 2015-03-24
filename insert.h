@@ -16,8 +16,10 @@
 //| Insert key into database                                                   |
 //+----------------------------------------------------------------------------+
 
-int f_insert(DB *db, DBT *key, DBT *value);
-int insert_nonfull(DB *db, block *b, size_t k, DBT *key, DBT *value);
-int split_child(DB *db, block *b, size_t b_block, size_t index);
+int   f_insert(DB *db, DBT *key, DBT *value);
+int   insert_nonfull(DB *db, block *b, size_t k, DBT *key, DBT *value);
+int   split_child(DB *db, block *x, size_t x_block, size_t child);
+int   insert_item(DB *db, block *b, size_t k, DBT *key, DBT *value);
+block *split_node(block *x, size_t from, size_t to);
 
 #endif /* __INSERT_H__ */

@@ -1,6 +1,6 @@
 #include "database.h"
 
-// TODO: close database, delete key, select key
+// TODO: f_close, f_delete, f_select
 
 //+----------------------------------------------------------------------------+
 //| Close database                                                             |
