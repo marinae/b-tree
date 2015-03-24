@@ -3,6 +3,7 @@
 
 #include "classes.h"
 #include "blocks.h"
+#include "insert.h"
 #include "database.h"
 #include <assert.h>
 
