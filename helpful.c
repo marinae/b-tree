@@ -44,27 +44,34 @@ int compare_keys(DBT *key1, DBT *key2) {
     if (key2->size < n)
         n = key2->size;
     /* Return true if key1 < key2 */
-    return strncmp(k1, k2, n);
+    int result = strncmp(k1, k2, n);
+    if (result == 0) {
+        /* First n symbols are equal */
+        if (key1->size < key2->size)
+            result = -1;
+        if (key1->size > key2->size)
+            result = 1;
+    }
+    return result;
 }
 
 //+----------------------------------------------------------------------------+
-//| Compare two keys if (key1 == key2)                                         |
+//| Returns true if block contains specific key                                |
 //+----------------------------------------------------------------------------+
 
-bool equal_keys(DBT *key1, DBT *key2) {
+size_t contains_key(block *x, DBT *key) {
     /* Check params */
-    assert(key1 && key1->data && key2 && key2->data);
+    assert(x && key && key->data);
 
-    /* Assign shorter names */
-    char *k1 = key1->data;
-    char *k2 = key2->data;
-    /* Compare size of keys */
-    if (key1->size != key2->size)
-        return 0;
-    /* Return true if key1 == key2 */
-    int result = strncmp(k1, k2, key1->size);
-
-    return (result == 0);
+    for (size_t i = 0; i < x->num_keys; ++i) {
+        if (compare_keys(x->items[i]->key, key) == 0) {
+            return i;
+        }
+        if (compare_keys(x->items[i]->key, key) > 0) {
+            return x->num_keys;
+        }
+    }
+    return x->num_keys;
 }
 
 //+----------------------------------------------------------------------------+
@@ -199,6 +206,10 @@ size_t need_memory(block *x) {
     busy += x->num_children * sizeof(size_t);
     return busy;
 }
+
+//+----------------------------------------------------------------------------+
+//| Print all nodes                                                            |
+//+----------------------------------------------------------------------------+
 
 int print_tree(DB *db, block *cur) {
     if (cur->num_children > 0) {

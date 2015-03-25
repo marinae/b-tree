@@ -17,7 +17,7 @@
 
 size_t free_space(block *b, size_t block_size);
 int    compare_keys(DBT *key1, DBT *key2);
-bool   equal_keys(DBT *key1, DBT *key2);
+size_t contains_key(block *x, DBT *key);
 item   *create_item(DBT *key, DBT *value);
 int    free_block(block *b);
 int    free_item(item *it);
