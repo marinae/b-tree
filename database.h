@@ -18,7 +18,6 @@
 
 int f_close(DB *db);
 int f_delete(DB *db, DBT *key);
-int f_select(DB *db, DBT *key, DBT *value);
 int f_sync(DB *db);
 
 #endif /* __DATABASE_H__ */
