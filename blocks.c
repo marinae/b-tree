@@ -10,13 +10,14 @@ int write_block(struct DB *db, size_t k, struct block *b) {
     assert(b->items || b->num_keys == 0);
     assert(b->children || b->num_children == 0);
     assert(k >= db->info->first_node && k <= db->info->num_blocks);
+    assert(need_memory(b) <= db->info->block_size);
 
     /* Calculate offset of block */
     size_t offset = db->info->block_size * k;
 
     /* Write key-value count */
     lseek(db->info->fd, offset, SEEK_SET);
-    write(db->info->fd, (void *)&b->num_keys, sizeof(b->num_keys));
+    write(db->info->fd, (void *)&b->num_keys, sizeof(size_t));
 
     /* Write pairs of keys and values */
     for (int i = 0; i < b->num_keys; ++i) {
@@ -69,10 +70,10 @@ block *read_block(DB *db, size_t k) {
     int fd = db->info->fd;
     /* Read key-value count */
     lseek(fd, offset, SEEK_SET);
-    read(fd, (void *)&b->num_keys, sizeof(b->num_keys));
+    read(fd, (void *)&b->num_keys, sizeof(size_t));
     /* Allocate memory for items */
     b->items = (item **)calloc(b->num_keys, sizeof(item *));
-
+    assert(b->items);
     /* Read pairs of keys and values */
     for (int i = 0; i < b->num_keys; ++i) {
         /* Allocate memory for single item */
@@ -110,6 +111,7 @@ block *read_block(DB *db, size_t k) {
         }
         free(b->items);
         free(b);
+        printf("An error occured in blocks.c (read)\n");
         return NULL;
     }
     b->children = (size_t *)calloc(b->num_children, sizeof(size_t));
@@ -128,8 +130,10 @@ block *read_block(DB *db, size_t k) {
 
 size_t find_empty_block(struct DB *db) {
     /* Check params */
-    if (!db || !db->info || !db->info->bitmap)
+    if (!db || !db->info || !db->info->bitmap) {
+        printf("An error occured in blocks.c (find)\n");
         return 0;
+    }
 
     /* Iterate through all byte-blocks */
     for (int i = 0; i < db->info->bitmap_len; ++i) {
@@ -145,9 +149,11 @@ size_t find_empty_block(struct DB *db) {
                 if ((bit | j_bit) != bit)
                     return db->info->first_node + i * 8 + j;
             }
+            printf("An error occured in blocks.c (find)\n");
             return 0;
         }
     }
+    printf("An error occured in blocks.c (find)\n");
     return 0;
 }
 
@@ -157,14 +163,18 @@ size_t find_empty_block(struct DB *db) {
 
 int mark_block(struct DB *db, size_t k, bool state) {
     /* Check params */
-    if (!db || !db->info || !db->info->bitmap)
+    if (!db || !db->info || !db->info->bitmap) {
+        printf("An error occured in blocks.c (mark)\n");
         return -1;
+    }
 
     /* Assign shorter name */
     DB_info *info = db->info;
     /* Check bounds */
-    if (k > info->num_blocks || k < info->first_node)
+    if (k > info->num_blocks || k < info->first_node) {
+        printf("An error occured in blocks.c (mark)\n");
         return -1;
+    }
     /* Subtract header blocks */
     k -= info->first_node;
     /* Compute indices */

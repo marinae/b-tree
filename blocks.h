@@ -2,6 +2,7 @@
 #define __BLOCKS_H__
 
 #include "classes.h"
+#include "helpful.h"
 
 #include <stdlib.h>
 #include <stdio.h>
