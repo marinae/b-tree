@@ -22,5 +22,6 @@ int    free_block(block *b);
 int    free_item(item *it);
 bool   enough_mem(DB *db, block *b, DBT *key, DBT *value);
 int    make_root(DB *db, size_t k);
+size_t need_memory(block *x);
 
 #endif /* __HELPFUL_H__ */

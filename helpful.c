@@ -15,7 +15,7 @@ size_t free_space(block *b, size_t block_size) {
     size_t busy = sizeof(size_t) * 2;
 
     for (size_t i = 0; i < b->num_keys; ++i) {
-        /* 2. sizeof(key->size + value-> size) */
+        /* 2. sizeof(key->size + value->size) */
         busy += sizeof(size_t) * 2;
         /* 3. key->size */
         busy += b->items[i]->key->size;
@@ -126,14 +126,14 @@ bool enough_mem(DB *db, block *b, DBT *key, DBT *value) {
     /* Check params */
     assert(db && db->info && key && value);
 
-    /* Compute free and needed memory size */
-    size_t free_mem = free_space(b, db->info->block_size);
-    size_t needed_mem = sizeof(size_t) * 2 + key->size + value->size;
+    /* Compute needed memory size */
+    size_t needed_mem = need_memory(b);
+    needed_mem += sizeof(size_t) * 2 + key->size + value->size;
     if (b->num_children > 0)
         needed_mem += 8;
 
     /* Compare them */
-    return (needed_mem <= free_mem);
+    return (needed_mem <= db->info->block_size);
 }
 
 //+----------------------------------------------------------------------------+
@@ -154,5 +154,30 @@ int make_root(DB *db, size_t k) {
     db->root->children[0] = db->info->root_index;
     db->info->root_index = k;
 
-    return 0;
+    return db->_mark_block(db, k, 1);
+}
+
+//+----------------------------------------------------------------------------+
+//| Needed memory for block                                                    |
+//+----------------------------------------------------------------------------+
+
+size_t need_memory(block *x) {
+    /* Check params */
+    assert(x);
+
+    /* Busy space: */
+    /* 1. sizeof(num_keys + num_children) */
+    size_t busy = sizeof(size_t) * 2;
+
+    for (size_t i = 0; i < x->num_keys; ++i) {
+        /* 2. sizeof(key->size + value->size) */
+        busy += sizeof(size_t) * 2;
+        /* 3. key->size */
+        busy += x->items[i]->key->size;
+        /* 4. value->size */
+        busy += x->items[i]->value->size;
+    }
+    /* 5. num_children * sizeof(child) */
+    busy += x->num_children * sizeof(size_t);
+    return busy;
 }
