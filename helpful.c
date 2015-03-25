@@ -32,7 +32,7 @@ size_t free_space(block *b, size_t block_size) {
 //| Compare two keys if (key1 < key2)                                          |
 //+----------------------------------------------------------------------------+
 
-bool compare_keys(DBT *key1, DBT *key2) {
+int compare_keys(DBT *key1, DBT *key2) {
     /* Check params */
     assert(key1 && key1->data && key2 && key2->data);
 
@@ -44,9 +44,27 @@ bool compare_keys(DBT *key1, DBT *key2) {
     if (key2->size < n)
         n = key2->size;
     /* Return true if key1 < key2 */
-    int result = strncmp(k1, k2, n);
+    return strncmp(k1, k2, n);
+}
 
-    return (result < 0);
+//+----------------------------------------------------------------------------+
+//| Compare two keys if (key1 == key2)                                         |
+//+----------------------------------------------------------------------------+
+
+bool equal_keys(DBT *key1, DBT *key2) {
+    /* Check params */
+    assert(key1 && key1->data && key2 && key2->data);
+
+    /* Assign shorter names */
+    char *k1 = key1->data;
+    char *k2 = key2->data;
+    /* Compare size of keys */
+    if (key1->size != key2->size)
+        return 0;
+    /* Return true if key1 == key2 */
+    int result = strncmp(k1, k2, key1->size);
+
+    return (result == 0);
 }
 
 //+----------------------------------------------------------------------------+
@@ -180,4 +198,25 @@ size_t need_memory(block *x) {
     /* 5. num_children * sizeof(child) */
     busy += x->num_children * sizeof(size_t);
     return busy;
+}
+
+int print_tree(DB *db, block *cur) {
+    if (cur->num_children > 0) {
+        block *b = db->_read_block(db, cur->children[0]);
+        print_tree(db, b);
+        free_block(b);
+        for (size_t i = 1; i < cur->num_children; ++i) {
+            printf("******************** Separator:\n");
+            printf("%s\n", cur->items[i - 1]->key->data);
+            b = db->_read_block(db, cur->children[i]);
+            print_tree(db, b);
+            free_block(b);
+        }
+    } else {
+        printf("********** Leaf:\n");
+        for (size_t i = 1; i < cur->num_keys; ++i) {
+            printf("%s\n", cur->items[i]->key->data);
+        }
+    }
+    return 0;
 }

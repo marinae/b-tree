@@ -16,12 +16,14 @@
 //+----------------------------------------------------------------------------+
 
 size_t free_space(block *b, size_t block_size);
-bool   compare_keys(DBT *key1, DBT *key2);
+int    compare_keys(DBT *key1, DBT *key2);
+bool   equal_keys(DBT *key1, DBT *key2);
 item   *create_item(DBT *key, DBT *value);
 int    free_block(block *b);
 int    free_item(item *it);
 bool   enough_mem(DB *db, block *b, DBT *key, DBT *value);
 int    make_root(DB *db, size_t k);
 size_t need_memory(block *x);
+int    print_tree(DB *db, block *cur);
 
 #endif /* __HELPFUL_H__ */
