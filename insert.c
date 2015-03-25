@@ -9,10 +9,6 @@ int f_insert(DB *db, DBT *key, DBT *value) {
     assert(db && db->info && db->root);
     assert(key && key->data && value && value->data);
 
-    static size_t count = 0;
-    printf("%lu. insert: key = %s\n", count, key->data);
-    ++count;
-
     /* Result of inserting */
     int result = 0;
 
@@ -64,31 +60,30 @@ int insert_nonfull(DB *db, block *x, size_t k, DBT *key, DBT *value) {
         /* Leaf block */
         assert(enough_mem(db, x, key, value));
         result = insert_item(db, x, k, key, value, 0);
+
     } else {
         /* Non-leaf block */
         /* Find child containing specific range */
         int i = find_child(x, key);
         /* Read child block */
         block *y = db->_read_block(db, x->children[i]);
-        size_t index = x->children[i];
-        //printf("this block: %lu, child block: %lu\n", k, index);
         /* Check if block is full */
         if (!enough_mem(db, y, key, value)) {
         	/* Block is full */
         	result = split_child(db, x, k, i);
         	free_block(y);
-        	y = db->_read_block(db, index);
+        	y = db->_read_block(db, x->children[i]);
         	/* Compare key with new child */
-        	if (compare_keys(x->items[i]->key, key)) {
+        	if (compare_keys(x->items[i]->key, key) < 0) {
         		/* Load new child block */
         		++i;
         		free_block(y);
-        		y = db->_read_block(db, index);
+        		y = db->_read_block(db, x->children[i]);
         	}
         }  
         /* Insert into nonfull branch */
         assert(enough_mem(db, y, key, value));
-        result |= insert_nonfull(db, y, index, key, value);
+        result |= insert_nonfull(db, y, x->children[i], key, value);
     }
     return result;
 }
@@ -125,11 +120,6 @@ int split_child(DB *db, block *x, size_t x_block, size_t child) {
     	block *z = split_node(w, up_me + 1, w->num_keys - 1);
     	/* Insert up_me item into block x */
     	item *it = w->items[up_me];
-    	for (int j = 0; j < x->num_keys; ++j) {
-    		printf("%d) key: %s\n", j, x->items[j]->key->data);
-    	}
-    	printf("new key: %s\n", it->key->data);
-    	printf("needed memory: %lu, key: %lu, value: %lu\n", need_memory(x), it->key->size, it->value->size);
     	if (!enough_mem(db, x, it->key, it->value)) {
     		/* Free allocated structures */
     		free_block(y);
@@ -167,7 +157,7 @@ int insert_item(DB *db, block *x, size_t k, DBT *key, DBT *value, size_t chd) {
     /* Create new item */
     item *it = create_item(key, value);
     /* Move from the end to the correct key location */
-    while (i > 0 && compare_keys(key, x->items[i-1]->key)) {
+    while (i > 0 && (compare_keys(key, x->items[i-1]->key) < 0)) {
         x->items[i] = x->items[i-1];
         --i;
     }
@@ -178,7 +168,6 @@ int insert_item(DB *db, block *x, size_t k, DBT *key, DBT *value, size_t chd) {
     if (chd > 0) {
     	/* Check node state */
     	size_t n = x->num_children;
-    	//printf("Children: %lu, chd: %lu\n", n, chd);
     	assert(n > 0);
     	/* Add child to position (i + 1) */
     	x->children = (size_t *)realloc(x->children, (n + 1) * sizeof(size_t));
@@ -234,7 +223,7 @@ size_t find_child(block *x, DBT *key) {
 
 	/* Move from the right to left */
 	size_t i = x->num_keys;
-	while (i > 0 && compare_keys(key, x->items[i - 1]->key))
+	while (i > 0 && (compare_keys(key, x->items[i - 1]->key) < 0))
     	--i;
     return i;
 }
