@@ -29,7 +29,7 @@ int key_search(DB *db, block *cur, DBT *key, DBT *value) {
     while (i < cur->num_keys && (compare_keys(cur->items[i]->key, key) < 0))
     	++i;
     /* Check key */
-    if (i < cur->num_keys && equal_keys(cur->items[i]->key, key)) {
+    if (i < cur->num_keys && (compare_keys(cur->items[i]->key, key) == 0)) {
     	/* Key found */
     	result = alloc_value(cur->items[i], value);
 
