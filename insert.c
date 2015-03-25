@@ -9,6 +9,9 @@ int f_insert(DB *db, DBT *key, DBT *value) {
     assert(db && db->info && db->root);
     assert(key && key->data && value && value->data);
 
+    static size_t count = 0;
+    ++count;
+
     /* Result of inserting */
     int result = 0;
 
@@ -39,6 +42,11 @@ int f_insert(DB *db, DBT *key, DBT *value) {
         	result = -1;
         }
     }
+    /* Report error */
+    if (result != 0)
+        printf("Error while inserting key %s\n", key->data);
+    //if (count == 9999)
+        //print_tree(db, db->root);
     return result;
 }
 
@@ -63,6 +71,12 @@ int insert_nonfull(DB *db, block *x, size_t k, DBT *key, DBT *value) {
 
     } else {
         /* Non-leaf block */
+        /* Check if element already exists here */
+        size_t j = contains_key(x, key);
+        if (j < x->num_keys) {
+            /* Edit value for key */
+            replace_value(db, k, x, j, key, value);
+        }
         /* Find child containing specific range */
         int i = find_child(x, key);
         /* Read child block */
@@ -72,6 +86,12 @@ int insert_nonfull(DB *db, block *x, size_t k, DBT *key, DBT *value) {
         	/* Block is full */
         	result = split_child(db, x, k, i);
         	free_block(y);
+            /* Check if new value splitted into x equals key */
+            j = contains_key(x, key);
+            if (j < x->num_keys) {
+                /* Edit value for key */
+                return replace_value(db, k, x, j, key, value);
+            }
         	y = db->_read_block(db, x->children[i]);
         	/* Compare key with new child */
         	if (compare_keys(x->items[i]->key, key) < 0) {
@@ -150,8 +170,15 @@ int insert_item(DB *db, block *x, size_t k, DBT *key, DBT *value, size_t chd) {
     assert(key && key->data && value && value->data);
     assert(k >= db->info->first_node && k <= db->info->num_blocks);
 
+    /* Index of inserting */
+    size_t i = contains_key(x, key);
+    /* Check if element already exists */
+    if (i < x->num_keys) {
+        return replace_value(db, k, x, i, key, value);
+    }
+
     /* The end of key array */
-	size_t i = x->num_keys;
+	i = x->num_keys;
     /* Realloc keys to array with size = size + 1 */
     x->items = (item **)realloc(x->items, (x->num_keys+1) * sizeof(item *));
     /* Create new item */
@@ -226,4 +253,21 @@ size_t find_child(block *x, DBT *key) {
 	while (i > 0 && (compare_keys(key, x->items[i - 1]->key) < 0))
     	--i;
     return i;
+}
+
+//+----------------------------------------------------------------------------+
+//| Replace old value                                                          |
+//+----------------------------------------------------------------------------+
+
+int replace_value(DB *db, size_t k, block *x, size_t j, DBT *key, DBT *val) {
+    /* Check params */
+    assert(db && db->info && db->root);
+    assert(x && key && key->data && val && val->data);
+
+    //printf("Edit value for key %s: ", key->data);
+    //printf("%s -> ", x->items[j]->value->data);
+    x->items[j]->value->size = val->size;
+    memcpy(x->items[j]->value->data, val->data, val->size);
+    //printf("%s\n", x->items[j]->value->data);
+    return db->_write_block(db, k, x);
 }
