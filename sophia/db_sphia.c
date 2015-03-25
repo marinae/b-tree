@@ -17,7 +17,7 @@ int sph_close(struct DB *db) {
 }
 
 int sph_delete(struct DB *db, struct DBT *key) {
-	int rc = sp_deleteete(db->db, key->data, key->size);
+	int rc = sp_delete(db->db, key->data, key->size);
 	if (rc == -1) {
 		printf("error: %s\n", sp_error(db->env));
 		assert(0);
@@ -26,7 +26,7 @@ int sph_delete(struct DB *db, struct DBT *key) {
 }
 
 int sph_select(struct DB *db, struct DBT *key, struct DBT *data) {
-	int rc = sp_select(db->db, key->data, key->size, &data->data, &data->size);
+	int rc = sp_get(db->db, key->data, key->size, &data->data, &data->size);
 	if (rc == -1) {
 		printf("error: %s\n", sp_error(db->env));
 		assert(0);

@@ -34,7 +34,7 @@ int clock_gettime(int flag, struct timespec *tspec) {
 int main(int argc, char *argv[]) {
 	std::string def_so_name = "./libmydb.so";
 	std::string def_db_name = "./mydbpath";
-	std::string def_wl_name = "../workload.uni";
+	std::string def_wl_name = "../workloads/workload.uni";
 
 	if (argc > 1) def_wl_name = std::string(argv[1]);
 	if (argc > 2) def_so_name = std::string(argv[2]);
@@ -53,18 +53,23 @@ int main(int argc, char *argv[]) {
 			clock_gettime(CLOCK_MONOTONIC, &t2);
 			time += (t2.tv_sec - t1.tv_sec) * 1e9 + (t2.tv_nsec - t1.tv_nsec);
 		} else if (op[0] == std::string("get")) {
-			char *val;
-			size_t val_size;
+			char *val = NULL;
+			size_t val_size = 0;
 			clock_gettime(CLOCK_MONOTONIC, &t1);
 			retval = db->select(op[1], &val, &val_size);
 			clock_gettime(CLOCK_MONOTONIC, &t2);
 			time += (t2.tv_sec - t1.tv_sec) * 1e9 + (t2.tv_nsec - t1.tv_nsec);
 			out.write(val, val_size) << "\n";
 		} else if (op[0] == std::string("del")) {
+			char *val = NULL;
+			size_t val_size = 0;
 			clock_gettime(CLOCK_MONOTONIC, &t1);
-			retval = db->_delete(op[1]);
+			retval = db->del(op[1]);
 			clock_gettime(CLOCK_MONOTONIC, &t2);
 			time += (t2.tv_sec - t1.tv_sec) * 1e9 + (t2.tv_nsec - t1.tv_nsec);
+			db->select(op[1], &val, &val_size);
+			if (!val)
+				out << "delete is ok\n";
 		} else {
 			std::cout << "bad op\n";
 		}
