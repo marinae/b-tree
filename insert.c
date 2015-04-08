@@ -44,6 +44,10 @@ int f_insert(DB *db, DBT *key, DBT *value) {
     if (result != 0)
         printf("Error while inserting key %s\n", key->data);
 
+    /* Update current maximum key+value size in database */
+    if (key->size + value->size > db->max_key_size)
+        db->max_key_size = key->size + value->size;
+
     return result;
 }
 

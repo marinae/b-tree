@@ -92,6 +92,7 @@ DB *dbcreate(char *file, DBC conf) {
     };
     db->root = (block *)calloc(1, sizeof(block));
     memcpy(db->root, &root, sizeof(root));
+    db->max_key_size = 0;
     /* Fill private API */
     db->_write_block      = write_block;
     db->_read_block       = read_block;

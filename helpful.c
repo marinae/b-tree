@@ -153,7 +153,7 @@ bool enough_mem(DB *db, block *b, DBT *key, DBT *value) {
 
     /* Compute needed memory size */
     size_t needed_mem = need_memory(b);
-    needed_mem += sizeof(size_t) * 2 + key->size + value->size;
+    needed_mem += sizeof(size_t) * 2 + db->max_key_size;
     if (b->num_children > 0)
         needed_mem += 8;
 
