@@ -1,6 +1,4 @@
 libmydb.so
 mydbpath
 sophia/third_party/
-workloads/workload.lat.out.yours
-workloads/workload.old.out.yours
-workloads/workload.uni.out.yours
+workloads/*.out.yours

@@ -1,6 +1,6 @@
 #include "database.h"
 
-// TODO: f_close, f_delete, f_select
+// TODO: f_close, f_sync
 
 //+----------------------------------------------------------------------------+
 //| Close database                                                             |
@@ -9,18 +9,6 @@
 int f_close(DB *db) {
     /* Check params */
     assert(db && db->info && db->root);
-
-    return 0;
-}
-
-//+----------------------------------------------------------------------------+
-//| Delete key                                                                 |
-//+----------------------------------------------------------------------------+
-
-int f_delete(DB *db, DBT *key) {
-    /* Check params */
-    assert(db && db->info && db->root);
-    assert(key && key->data);
 
     return 0;
 }

@@ -1,9 +1,15 @@
+CC=gcc
+CFLAGS=-std=c99
+LDFLAGS=-shared -fPIC
+SOURCES=blocks.c helpful.c insert.c select.c delete.c database.c mydb.c
+EXECUTABLE=libmydb.so
+
 all:
-	gcc blocks.c helpful.c insert.c select.c database.c mydb.c -std=c99 -shared -fPIC -o libmydb.so
+	$(CC) $(CFLAGS) $(LDFLAGS) $(SOURCES) -o $(EXECUTABLE)
 
 sophia:
 	make -C sophia/
 
 clean:
-	rm libmydb.so
+	rm $(EXECUTABLE)
 	rm mydbpath

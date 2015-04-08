@@ -5,6 +5,7 @@
 #include "blocks.h"
 #include "insert.h"
 #include "select.h"
+#include "delete.h"
 #include "database.h"
 #include <assert.h>
 

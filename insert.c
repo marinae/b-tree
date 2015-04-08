@@ -9,9 +9,6 @@ int f_insert(DB *db, DBT *key, DBT *value) {
     assert(db && db->info && db->root);
     assert(key && key->data && value && value->data);
 
-    static size_t count = 0;
-    ++count;
-
     /* Result of inserting */
     int result = 0;
 
@@ -40,13 +37,13 @@ int f_insert(DB *db, DBT *key, DBT *value) {
         } else {
         	/* No free blocks */
         	result = -1;
+            printf("No more free blocks\n");
         }
     }
     /* Report error */
     if (result != 0)
         printf("Error while inserting key %s\n", key->data);
-    //if (count == 9999)
-        //print_tree(db, db->root);
+
     return result;
 }
 
@@ -77,7 +74,7 @@ int insert_nonfull(DB *db, block *x, size_t k, DBT *key, DBT *value) {
             /* Edit value for key */
             replace_value(db, k, x, j, key, value);
         }
-        /* Find child containing specific range */
+        /* Find child containing specific key range */
         int i = find_child(x, key);
         /* Read child block */
         block *y = db->_read_block(db, x->children[i]);
@@ -144,7 +141,7 @@ int split_child(DB *db, block *x, size_t x_block, size_t child) {
     		/* Free allocated structures */
     		free_block(y);
     		free_block(z);
-    		printf("Error while inserting a key\n");
+    		printf("Error while inserting key (in split_node)\n");
     		return -1;
     	}
     	result = insert_item(db, x, x_block, it->key, it->value, z_block);
