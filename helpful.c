@@ -110,14 +110,20 @@ int free_block(block *b) {
     /* Free all internal structures of b and block itself */
     if (b->items) {
         for (size_t i = 0; i < b->num_keys; ++i) {
-            if (b->items[i])
+            if (b->items[i]) {
                 free(b->items[i]);
+                b->items[i] = NULL;
+            }
         }
         free(b->items);
+        b->items = NULL;
     }
-    if (b->children)
+    if (b->children) {
         free(b->children);
+        b->children = NULL;
+    }
     free(b);
+    b = NULL;
 
     return 0;
 }
@@ -212,7 +218,10 @@ size_t need_memory(block *x) {
 //+----------------------------------------------------------------------------+
 
 int print_tree(DB *db, block *cur) {
-    if (cur->num_children > 0) {
+    static int count = 0;
+    static int items = 0;
+    /*if (cur->num_children > 0) {
+        count++;
         block *b = db->_read_block(db, cur->children[0]);
         print_tree(db, b);
         free_block(b);
@@ -227,7 +236,36 @@ int print_tree(DB *db, block *cur) {
         printf("********** Leaf:\n");
         for (size_t i = 1; i < cur->num_keys; ++i) {
             printf("%s\n", cur->items[i]->key->data);
+            count++;
         }
+    }*/
+
+    printf("*** Block %d: %lu keys, %lu children\n", count, cur->num_keys, cur->num_children);
+    ++count;
+    for (size_t i = 0; i < cur->num_keys; ++i) {
+        printf("Item %d: %s\n", items, cur->items[i]->key->data);
+        ++items;
     }
-    return 0;
+    for (size_t i = 0; i < cur->num_children; ++i) {
+        block *b = db->_read_block(db, cur->children[i]);
+        print_tree(db, b);
+        free_block(b);
+    }
+
+    return count;
+}
+
+//+----------------------------------------------------------------------------+
+//| Find child index containing specific key                                   |
+//+----------------------------------------------------------------------------+
+
+size_t find_child(block *x, DBT *key) {
+    /* Check params */
+    assert(x && key && key->data);
+
+    /* Move from the right to left */
+    size_t i = x->num_keys;
+    while (i > 0 && (compare_keys(key, x->items[i - 1]->key) < 0))
+        --i;
+    return i;
 }

@@ -242,21 +242,6 @@ block *split_node(block *x, size_t from, size_t to) {
 }
 
 //+----------------------------------------------------------------------------+
-//| Find child index containing specific key                                   |
-//+----------------------------------------------------------------------------+
-
-size_t find_child(block *x, DBT *key) {
-	/* Check params */
-	assert(x && key && key->data);
-
-	/* Move from the right to left */
-	size_t i = x->num_keys;
-	while (i > 0 && (compare_keys(key, x->items[i - 1]->key) < 0))
-    	--i;
-    return i;
-}
-
-//+----------------------------------------------------------------------------+
 //| Replace old value                                                          |
 //+----------------------------------------------------------------------------+
 

@@ -197,3 +197,24 @@ int mark_block(struct DB *db, size_t k, bool state) {
 
     return 0;
 }
+
+//+----------------------------------------------------------------------------+
+//| Delete block from disc (NULL it) and set as free                           |
+//+----------------------------------------------------------------------------+
+
+int delete_block(DB *db, size_t k) {
+    /* Check params */
+    assert(db && db->info);
+    assert(k >= db->info->first_node && k <= db->info->num_blocks);
+
+    /* Calculate offset of block */
+    size_t offset = db->info->block_size * k;
+    lseek(db->info->fd, offset, SEEK_SET);
+
+    /* Create a zero array */
+    char *buf = (char *)calloc(db->info->block_size, sizeof(char));
+    write(db->info->fd, (void *)&buf, sizeof(db->info->block_size));
+
+    /* Mark block as free */
+    return db->_mark_block(db, k, 0);
+}

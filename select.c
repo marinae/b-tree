@@ -35,11 +35,11 @@ int key_search(DB *db, block *cur, DBT *key, DBT *value) {
 
     } else if (cur->num_children == 0) {
     	/* Leaf node, key not found */
-    	printf("key not found in leaf: %s\n", key->data);
+    	/*printf("key not found in leaf: %s\n", key->data);
     	printf("Items in block:\n");
         for (int j = 0; j < cur->num_keys; ++j)
             printf("%s\n", cur->items[j]->key->data);
-        printf("*************************\n");
+        printf("*************************\n");*/
     	result = -1;
 
     } else {

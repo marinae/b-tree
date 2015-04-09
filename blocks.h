@@ -20,5 +20,6 @@ int    write_block(DB *db, size_t k, block *b);
 block  *read_block(DB *db, size_t k);
 size_t find_empty_block(DB *db);
 int    mark_block(DB *db, size_t k, bool state);
+int    delete_block(DB *db, size_t k);
 
 #endif /* __BLOCKS_H__ */
