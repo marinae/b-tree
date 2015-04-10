@@ -1,7 +1,5 @@
 #include "database.h"
 
-// TODO: f_close, f_sync
-
 //+----------------------------------------------------------------------------+
 //| Close database                                                             |
 //+----------------------------------------------------------------------------+
@@ -9,6 +7,12 @@
 int f_close(DB *db) {
     /* Check params */
     assert(db && db->info && db->root);
+
+    /* Free DB parameters */
+    free(db->info->bitmap);
+    free(db->info);
+    free_block(db->root);
+    free(db);
 
     return 0;
 }
