@@ -2,7 +2,6 @@
 #define __DELETE_H__
 
 #include "classes.h"
-//#include "blocks.h"
 #include "helpful.h"
 
 #include <stdlib.h>
