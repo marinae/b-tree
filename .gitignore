@@ -2,3 +2,4 @@ libmydb.so
 mydbpath
 sophia/third_party/
 workloads/*.out.yours
+runner/test_speed
