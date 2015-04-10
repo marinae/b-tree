@@ -3,6 +3,9 @@ CFLAGS=-std=c99
 LDFLAGS=-shared -fPIC
 SOURCES=blocks.c helpful.c insert.c select.c delete.c database.c mydb.c
 LIBRARY=libmydb.so
+DATABASE=mydbpath
+EXE=./runner/test_speed
+WDIR=./workloads
 
 all:
 	$(CC) $(CFLAGS) $(LDFLAGS) $(SOURCES) -o $(LIBRARY)
@@ -12,23 +15,24 @@ sophia:
 
 clean:
 	rm $(LIBRARY)
-	rm mydbpath
+	rm $(DATABASE)
+	rm $(WDIR)/*.yours
 
 test1:
-	./runner/test_speed ./workloads/workload.lat $(LIBRARY)
-	diff ./workloads/workload.lat.out ./workloads/workload.lat.out.yours
+	$(EXE) $(WDIR)/workload.lat $(LIBRARY)
+	diff $(WDIR)/workload.lat.out $(WDIR)/workload.lat.out.yours
 
 test2:
-	./runner/test_speed ./workloads/workload.old $(LIBRARY)
-	diff ./workloads/workload.old.out ./workloads/workload.old.out.yours
+	$(EXE) $(WDIR)/workload.old $(LIBRARY)
+	diff $(WDIR)/workload.old.out $(WDIR)/workload.old.out.yours
 
 test3:
-	./runner/test_speed ./workloads/workload.uni $(LIBRARY)
-	diff ./workloads/workload.uni.out ./workloads/workload.uni.out.yours
+	$(EXE) $(WDIR)/workload.uni $(LIBRARY)
+	diff $(WDIR)/workload.uni.out $(WDIR)/workload.uni.out.yours
 
 test4:
-	./runner/test_speed ./workloads/rwd-workloads $(LIBRARY)
-	#diff ./workloads/rwd-workloads.out ./workloads/rwd-workloads.out.yours
+	$(EXE) $(WDIR)/rwd-workloads $(LIBRARY)
+	diff $(WDIR)/rwd-workloads.out $(WDIR)/rwd-workloads.out.yours
 
 test:
 	make test1
