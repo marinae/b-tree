@@ -54,13 +54,9 @@ DB *dbcreate(char *file, DBC conf) {
     db->info = (DB_info *)calloc(1, sizeof(DB_info));
     memcpy(db->info, &info, sizeof(info));
     /* Print DB parameters */
-    printf("fd = %d\n",             db->info->fd);
-    printf("block_size    = %lu\n", db->info->block_size);
-    printf("num_blocks    = %lu\n", db->info->num_blocks);
-    printf("bitmap_len    = %lu\n", db->info->bitmap_len);
-    printf("bitmap_blocks = %lu\n", db->info->bitmap_blocks);
-    printf("first_node    = %lu\n", db->info->first_node);
-    printf("root_index    = %lu\n", db->info->root_index);
+    printf("Block size       = %lu\n", db->info->block_size);
+    printf("Num blocks       = %lu\n", db->info->num_blocks);
+    printf("First data block = %lu\n", db->info->first_node);
     /* Write file header */
     header hr = {
         .block_size = db->info->block_size,
