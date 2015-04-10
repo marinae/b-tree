@@ -9,19 +9,6 @@ int f_delete(DB *db, DBT *key) {
     assert(db && db->info && db->root);
     assert(key && key->data);
 
-    //printf("***** Delete key\n");
-
-    static int count = 0;
-    count++;
-
-    if (count % 1000 == 0)
-    	printf("***** Delete key\n");
-
-    if (count == 30000) {
-    	int x = print_tree(db, db->root);
-    	printf("Overall items count: %d\n", x);
-    }
-
     /* Delete - start from root */
     return delete_from(db, db->root, db->info->root_index, key);
 }
@@ -38,8 +25,6 @@ int delete_from(DB *db, block *x, size_t k, DBT *key) {
 
 	/* Result of deleting */
 	int result = 0;
-
-	//printf("Num keys in block: %lu\n", x->num_keys);
 
     /* Check if block contains this key */
     size_t j = contains_key(x, key);
@@ -73,15 +58,8 @@ int delete_from(DB *db, block *x, size_t k, DBT *key) {
     	/* Check if block x is leaf */
         if (x->num_children == 0) {
         	/* Key not found in tree */
-        	/*printf("Key not found while deleting: %s\n", key->data);
-        	printf("Searched in block:\n");
-        	for (int i = 0; i < x->num_keys; ++i)
-        		printf("%s\n", x->items[i]->key->data);
-        	printf("-----\n");*/
+
         } else {
-
-	    	// TODO ???
-
         	/* Try to merge all children pairwise */
         	j = 0;
         	while (j+1 < x->num_children) {
@@ -93,7 +71,6 @@ int delete_from(DB *db, block *x, size_t k, DBT *key) {
 	        		++j;
 	        	}
         	}
-
 	    	/* Find subtree containing key */
 	    	j = find_child(x, key);
 	    	/* Read x's child */
@@ -104,7 +81,6 @@ int delete_from(DB *db, block *x, size_t k, DBT *key) {
 	    	result |= free_block(subtree);
     	}
     }
-
     return result;
 }
 
@@ -192,24 +168,6 @@ int merge_children(DB *db, block *x, size_t j, size_t k, DBT *key) {
     size_t right_ch = right->num_children;
     assert(left_ch == 0 && right_ch == 0 || left_ch > 0 && right_ch > 0);
 
-    /*printf("*** Before merging:\n");
-    printf("*** X block:\n");
-    for (int j = 0; j < x->num_keys; ++j)
-        printf("%s\n", x->items[j]->key->data);
-    for (int j = 0; j < x->num_children; ++j)
-        printf("%lu\n", x->children[j]);
-    printf("*** Left block:\n");
-    for (int j = 0; j < left->num_keys; ++j)
-        printf("%s\n", left->items[j]->key->data);
-    for (int j = 0; j < left->num_children; ++j)
-        printf("%lu\n", left->children[j]);
-    printf("*** Right block:\n");
-    for (int j = 0; j < right->num_keys; ++j)
-        printf("%s\n", right->items[j]->key->data);
-    for (int j = 0; j < right->num_children; ++j)
-        printf("%lu\n", right->children[j]);
-    printf("*************************\n");*/
-
     /* Append key from x */
     /* Realloc keys to array with size = size_left + size_right + 1 */
     size_t n_keys = left->num_keys + right->num_keys + 1;
@@ -244,7 +202,6 @@ int merge_children(DB *db, block *x, size_t j, size_t k, DBT *key) {
 	/* Left block is ready! */
 	result = db->_write_block(db, x->children[j], left);
 	/* Right block is ready! */
-	//result |= delete_block(db, x->children[j+1]);
 	result |= db->_mark_block(db, x->children[j+1], 0);
 
 	/* Delete key from block x */
@@ -262,19 +219,6 @@ int merge_children(DB *db, block *x, size_t j, size_t k, DBT *key) {
     x->num_children -= 1;
     /* Write changes */
     result = db->_write_block(db, k, x);
-
-    /*printf("*** After merging:\n");
-    printf("*** X block:\n");
-    for (int j = 0; j < x->num_keys; ++j)
-        printf("%s\n", x->items[j]->key->data);
-    for (int j = 0; j < x->num_children; ++j)
-        printf("%lu\n", x->children[j]);
-    printf("*** Child block:\n");
-    for (int j = 0; j < left->num_keys; ++j)
-        printf("%s\n", left->items[j]->key->data);
-    for (int j = 0; j < left->num_children; ++j)
-        printf("%lu\n", left->children[j]);
-    printf("*************************\n");*/
 
     /* Free allocated structures */
 	free_block(left);
@@ -331,13 +275,12 @@ int replace_key(DB *db, block *x, size_t j, size_t k, DBT *key) {
     	/* Delete item from left block */
     	item *it = create_item(last_item->key, last_item->value);
     	result = delete_here(db, left, child, last);
+    	
+		/* Replace key in x */
+		free_item(x->items[j]);
+		x->items[j] = it;
+		result = db->_write_block(db, k, x);
 
-    	if (result == 0) {
-    		/* Replace key in x */
-    		free_item(x->items[j]);
-    		x->items[j] = it;
-    		result = db->_write_block(db, k, x);
-    	}
     } else {
     	/* Extract successor of x from right subtree */
     	size_t child = x->children[j+1];
@@ -361,12 +304,10 @@ int replace_key(DB *db, block *x, size_t j, size_t k, DBT *key) {
     	item *it = create_item(first_item->key, first_item->value);
     	result = delete_here(db, right, child, 0);
 
-    	if (result == 0) {
-    		/* Replace key in x */
-    		free_item(x->items[j]);
-    		x->items[j] = it;
-    		result = db->_write_block(db, k, x);
-    	}
+		/* Replace key in x */
+		free_item(x->items[j]);
+		x->items[j] = it;
+		result = db->_write_block(db, k, x);
     }
 
     /* Free allocated memory */
