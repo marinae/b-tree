@@ -76,7 +76,7 @@ int insert_nonfull(DB *db, block *x, size_t k, DBT *key, DBT *value) {
         size_t j = contains_key(x, key);
         if (j < x->num_keys) {
             /* Edit value for key */
-            replace_value(db, k, x, j, key, value);
+            return replace_value(db, k, x, j, key, value);
         }
         /* Find child containing specific key range */
         int i = find_child(x, key);
@@ -250,10 +250,8 @@ int replace_value(DB *db, size_t k, block *x, size_t j, DBT *key, DBT *val) {
     assert(db && db->info && db->root);
     assert(x && key && key->data && val && val->data);
 
-    //printf("Edit value for key %s: ", key->data);
-    //printf("%s -> ", x->items[j]->value->data);
     x->items[j]->value->size = val->size;
     memcpy(x->items[j]->value->data, val->data, val->size);
-    //printf("%s\n", x->items[j]->value->data);
+
     return db->_write_block(db, k, x);
 }
