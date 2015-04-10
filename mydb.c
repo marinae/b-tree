@@ -1,7 +1,5 @@
 #include "mydb.h"
 
-// TODO: open database
-
 //+----------------------------------------------------------------------------+
 //| Open database                                                              |
 //+----------------------------------------------------------------------------+
@@ -10,7 +8,29 @@ DB *dbopen(char *file) {
     /* Check params */
     assert(file);
 
+    /* Allocate memory for structure */
     DB *db = (DB *)calloc(1, sizeof(DB));
+    /* Open file with database */
+    int fd = open(file, O_RDWR);
+    if (fd == -1) {
+        free(db);
+        return NULL;
+    }
+
+    // TODO: fill db parameters
+
+    /* Fill private API */
+    db->_write_block      = write_block;
+    db->_read_block       = read_block;
+    db->_find_empty_block = find_empty_block;
+    db->_mark_block       = mark_block;
+    /* Fill public API */
+    db->_close  = f_close;
+    db->_delete = f_delete;
+    db->_insert = f_insert;
+    db->_select = f_select;
+    db->_sync   = f_sync;
+
     return db;
 }
 
