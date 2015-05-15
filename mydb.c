@@ -18,6 +18,7 @@ DB *dbopen(char *file) {
     }
 
     // TODO: fill db parameters
+    // TODO: crash-safe
 
     /* Fill private API */
     db->_write_block      = c_write_block;
@@ -79,6 +80,7 @@ DB *dbcreate(char *file, DBC conf) {
         .n_blocks      = 0,
         .max_blocks    = max_cached,
         .lru           = NULL,
+        .lru_end       = NULL,
         .hashed_blocks = NULL
     };
     db->cache = (block_cache *)calloc(1, sizeof(block_cache));

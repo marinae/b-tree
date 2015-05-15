@@ -84,6 +84,7 @@ typedef struct block_cache {
 	size_t max_blocks;
 	/* Double-linked list of blocks */
 	block *lru;
+	block *lru_end;
 	/* Quick look up by block ID */
 	hashed_pointer *hashed_blocks;
 } block_cache;

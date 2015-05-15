@@ -14,7 +14,7 @@ int c_write_block(DB *db, size_t k, block *b_new) {
 			b->status = DIRTY;
 			//printf("Block %lu marked as DIRTY\n", k);
 		}
-		// TODO: move block to the first position in cache
+		repush_front(db->cache, b);
 		return copy_block_to(b, b_new);
 
 	} else {
@@ -98,11 +98,12 @@ block *add_to_cache(DB *db, size_t k) {
 //+----------------------------------------------------------------------------+
 
 int push_front(block_cache *cache, block *b) {
-	assert(cache && cache->n_blocks < cache->max_blocks);
+	assert(cache && b && cache->n_blocks < cache->max_blocks);
 	/* Increase number of blocks in cache */
 	if (cache->n_blocks == 0) {
 		/* No blocks in LRU */
-		cache->lru = b;
+		cache->lru     = b;
+		cache->lru_end = b;
 	} else {
 		/* Set previous block as b for first block in LRU */
 		block *old_root = cache->lru;
@@ -118,15 +119,38 @@ int push_front(block_cache *cache, block *b) {
 }
 
 //+----------------------------------------------------------------------------+
+//| Move block to the first position in list                                   |
+//+----------------------------------------------------------------------------+
+
+int repush_front(block_cache *cache, block *b) {
+	assert(cache && b);
+	block *prev = b->lru_prev;
+	block *next = b->lru_next;
+	/* Check if block is already first */
+	if (prev != NULL) {
+		/* Update previous block */
+		prev->lru_next = next;
+		if (next == NULL) {
+			/* Change end pointer */
+			cache->lru_end = prev;
+		} else {
+			/* Else update next element */
+			next->lru_prev = prev;
+		}
+		--cache->n_blocks;
+		push_front(cache, b);
+	}
+	return 0;
+}
+
+//+----------------------------------------------------------------------------+
 //| Pop last element from list                                                 |
 //+----------------------------------------------------------------------------+
 
 int pop_back(DB *db, block_cache *cache) {
 	assert(db && cache && cache->n_blocks > 0);
 	/* Find last element */
-	block *last = cache->lru;
-	while (last->lru_next != NULL)
-		last = last->lru_next;
+	block *last = cache->lru_end;
 	/* Flush on disc if DIRTY */
 	if (last->status == DIRTY)
 		write_block(db, last->id, last);
@@ -134,6 +158,7 @@ int pop_back(DB *db, block_cache *cache) {
 	if (cache->n_blocks > 1) {
 		assert(last->lru_prev);
 		last->lru_prev->lru_next = NULL;
+		cache->lru_end = last->lru_prev;
 	}
 	/* Find block in hash table */
 	hashed_pointer *hpointer;
@@ -145,5 +170,25 @@ int pop_back(DB *db, block_cache *cache) {
 	//printf("Block %lu removed from cache, total blocks: %lu\n", last->id, cache->n_blocks - 1);
 	free_block(last);
 	--cache->n_blocks;
+	return 0;
+}
+
+//+----------------------------------------------------------------------------+
+//| Flush cache and clear                                                      |
+//+----------------------------------------------------------------------------+
+
+int flush_cache(DB *db) {
+	assert(db && db->cache);
+	block *b = db->cache->lru;
+	while (b) {
+		if (b->status == DIRTY)
+			write_block(db, b->id, b);
+		//printf("Block %lu removed from cache, total blocks: %lu\n", b->id, db->cache->n_blocks - 1);
+		block *tmp = b;
+		b = b->lru_next;
+		free_block(tmp);
+		--db->cache->n_blocks;
+	}
+	HASH_CLEAR(hh, db->cache->hashed_blocks);
 	return 0;
 }

@@ -7,15 +7,13 @@
 int f_close(DB *db) {
     /* Check params */
     assert(db && db->info && db->root);
-
-    // TODO: flush cache
-
+    /* Sync cache to disc */
+    flush_cache(db);
     /* Free DB parameters */
     free(db->info->bitmap);
     free(db->info);
     free_block(db->root);
     free(db);
-
     return 0;
 }
 
@@ -26,8 +24,7 @@ int f_close(DB *db) {
 int f_sync(DB *db) {
     /* Check params */
     assert(db && db->info && db->root);
-
-    // TODO: flush cache
-
+    flush_cache(db);
+    // TODO: ?
     return 0;
 }

@@ -2,6 +2,7 @@
 #define __DATABASE_H__
 
 #include "classes.h"
+#include "cache.h"
 #include "helpful.h"
 
 #include <stdlib.h>
