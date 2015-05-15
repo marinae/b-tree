@@ -1,6 +1,8 @@
 #ifndef __CLASSES_H__
 #define __CLASSES_H__
 
+#include "third_party/uthash.h"
+
 #include <stddef.h>
 #include <stdbool.h>
 
@@ -56,7 +58,35 @@ typedef struct block {
 	item   **items;
 	size_t num_children;
 	size_t *children;
+	/* For caching */
+	size_t              id;
+	struct block        *lru_next;
+	struct block        *lru_prev;
+	enum {DIRTY, CLEAN} status;
 } block;
+
+//+----------------------------------------------------------------------------+
+//| Hashed pointer to the block b                                              |
+//+----------------------------------------------------------------------------+
+
+typedef struct hashed_pointer {
+	block  *b;
+	size_t id;
+	UT_hash_handle hh;
+} hashed_pointer;
+
+//+----------------------------------------------------------------------------+
+//| Cache                                                                      |
+//+----------------------------------------------------------------------------+
+
+typedef struct block_cache {
+	size_t n_blocks;
+	size_t max_blocks;
+	/* Double-linked list of blocks */
+	block *lru;
+	/* Quick look up by block ID */
+	hashed_pointer *hashed_blocks;
+} block_cache;
 
 //+----------------------------------------------------------------------------+
 //| Database API                                                               |
@@ -89,9 +119,10 @@ typedef struct DB {
 	int    (*_mark_block)(struct DB *db, size_t k, bool state);
     
     /* DB parameters: file descriptor, node size, root offset, etc. */
-    DB_info *info;
-    block   *root;
-    size_t  max_key_size;
+    DB_info     *info;
+    block       *root;
+    size_t      max_key_size;
+    block_cache *cache;
 } DB; /* Need for supporting multiple backends (HASH/BTREE) */
 
 //+----------------------------------------------------------------------------+

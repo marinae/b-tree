@@ -3,6 +3,7 @@
 
 #include "classes.h"
 #include "blocks.h"
+#include "cache.h"
 #include "insert.h"
 #include "select.h"
 #include "delete.h"

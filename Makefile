@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-std=c99
 LDFLAGS=-shared -fPIC
-SOURCES=blocks.c helpful.c insert.c select.c delete.c database.c mydb.c
+SOURCES=blocks.c cache.c helpful.c insert.c select.c delete.c database.c mydb.c
 LIBRARY=libmydb.so
 DATABASE=mydbpath
 EXE=./runner/test_speed

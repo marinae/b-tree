@@ -8,6 +8,8 @@ int f_close(DB *db) {
     /* Check params */
     assert(db && db->info && db->root);
 
+    // TODO: flush cache
+
     /* Free DB parameters */
     free(db->info->bitmap);
     free(db->info);
@@ -24,6 +26,8 @@ int f_close(DB *db) {
 int f_sync(DB *db) {
     /* Check params */
     assert(db && db->info && db->root);
+
+    // TODO: flush cache
 
     return 0;
 }

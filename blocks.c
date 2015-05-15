@@ -197,3 +197,73 @@ int mark_block(struct DB *db, size_t k, bool state) {
 
     return 0;
 }
+
+//+----------------------------------------------------------------------------+
+//| Return copy of block                                                       |
+//+----------------------------------------------------------------------------+
+
+block *copy_block(block *b) {
+    assert(b);
+    block *b_copy = (block *)calloc(1, sizeof(block));
+    blockcpy(b, b_copy);
+    return b_copy;
+}
+
+//+----------------------------------------------------------------------------+
+//| Replace b's items and children with b_new's                                |
+//+----------------------------------------------------------------------------+
+
+int copy_block_to(block *b, block *b_new) {
+    assert(b && b_new);
+    /* Free all internal structures of b */
+    if (b->items) {
+        for (size_t i = 0; i < b->num_keys; ++i) {
+            if (b->items[i]) {
+                free(b->items[i]);
+                b->items[i] = NULL;
+            }
+        }
+        free(b->items);
+        b->items = NULL;
+    }
+    if (b->children) {
+        free(b->children);
+        b->children = NULL;
+    }
+    blockcpy(b_new, b);
+    return 0;
+}
+
+//+----------------------------------------------------------------------------+
+//| Allocate memory and copy items/children (from b to b_copy)                 |
+//+----------------------------------------------------------------------------+
+
+int blockcpy(block *b, block *b_copy) {
+    assert(b && b_copy);
+    /* Copy items */
+    b_copy->num_keys = b->num_keys;
+    b_copy->items = (item **)calloc(b->num_keys, sizeof(item *));
+    for (int i = 0; i < b->num_keys; ++i) {
+        b_copy->items[i] = (item *)calloc(1, sizeof(item));
+        item *it  = b->items[i];
+        item *itc = b_copy->items[i];
+        /* Copy key */
+        itc->key = (DBT *)calloc(1, sizeof(DBT));
+        itc->key->size = it->key->size;
+        itc->key->data = (void *)calloc(1, it->key->size);
+        memcpy(itc->key->data, it->key->data, it->key->size);
+        /* Copy value */
+        itc->value = (DBT *)calloc(1, sizeof(DBT));
+        itc->value->size = it->value->size;
+        itc->value->data = (void *)calloc(1, it->value->size);
+        memcpy(itc->value->data, it->value->data, it->value->size);
+    }
+    /* Copy children */
+    b_copy->num_children = b->num_children;
+    if (b->num_children > 0) {
+        b_copy->children = (size_t *)calloc(b->num_children, sizeof(size_t));
+        for (int j = 0; j < b->num_children; ++j)
+            b_copy->children[j] = b->children[j];
+    }
+    return 0;
+}
