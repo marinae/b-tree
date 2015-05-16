@@ -12,9 +12,10 @@ int c_write_block(DB *db, size_t k, block *b_new) {
 		/* Found -> update block and status */
 		if (b->status == CLEAN) {
 			b->status = DIRTY;
-			//printf("Block %lu marked as DIRTY\n", k);
+			#ifdef _DEBUG_CACHE_MODE_
+			printf("Block %lu marked as DIRTY\n", k);
+			#endif /* _DEBUG_CACHE_MODE_ */
 		}
-		repush_front(db->cache, b);
 		return copy_block_to(b, b_new);
 
 	} else {
@@ -32,10 +33,13 @@ block* c_read_block(DB *db, size_t k) {
 	block *b = search_in_cache(db->cache->hashed_blocks, k);
 	if (b != NULL) {
 		/* Found -> return its copy */
-		/*if (b->status == CLEAN)
+		#ifdef _DEBUG_CACHE_MODE_
+		if (b->status == CLEAN)
 			printf("Block %lu found in cache, status = CLEAN\n", k);
 		else
-			printf("Block %lu found in cache, status = DIRTY\n", k);*/
+			printf("Block %lu found in cache, status = DIRTY\n", k);
+		#endif /* _DEBUG_CACHE_MODE_ */
+		repush_front(db->cache, b);
 		return copy_block(b);
 
 	} else {
@@ -87,9 +91,9 @@ block *add_to_cache(DB *db, size_t k) {
 	/* Prepend to block list */
 	b_copy->status = CLEAN;
 	push_front(db->cache, b_copy);
-
-	//printf("Block %lu added to cache, free space = %lu\n", k, db->cache->max_blocks - db->cache->n_blocks);
-
+	#ifdef _DEBUG_CACHE_MODE_
+	printf("Block %lu added to cache, free space = %lu\n", k, db->cache->max_blocks - db->cache->n_blocks);
+	#endif /* _DEBUG_CACHE_MODE_ */
 	return b;
 }
 
@@ -167,7 +171,9 @@ int pop_back(DB *db, block_cache *cache) {
 	/* Remove block from cache and hash table */
 	assert(hpointer);
 	HASH_DEL(cache->hashed_blocks, hpointer);
-	//printf("Block %lu removed from cache, total blocks: %lu\n", last->id, cache->n_blocks - 1);
+	#ifdef _DEBUG_CACHE_MODE_
+	printf("Block %lu removed from cache, total blocks: %lu\n", last->id, cache->n_blocks - 1);
+	#endif /* _DEBUG_CACHE_MODE_ */
 	free_block(last);
 	--cache->n_blocks;
 	return 0;
@@ -183,7 +189,9 @@ int flush_cache(DB *db) {
 	while (b) {
 		if (b->status == DIRTY)
 			write_block(db, b->id, b);
-		//printf("Block %lu removed from cache, total blocks: %lu\n", b->id, db->cache->n_blocks - 1);
+		#ifdef _DEBUG_CACHE_MODE_
+		printf("Block %lu removed from cache, total blocks: %lu\n", b->id, db->cache->n_blocks - 1);
+		#endif /* _DEBUG_CACHE_MODE_ */
 		block *tmp = b;
 		b = b->lru_next;
 		free_block(tmp);

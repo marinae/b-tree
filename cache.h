@@ -1,6 +1,8 @@
 #ifndef __CACHE_H__
 #define __CACHE_H__
 
+//#define _DEBUG_CACHE_MODE_
+
 #include "classes.h"
 #include "helpful.h"
 #include "blocks.h"
