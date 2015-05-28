@@ -8,6 +8,7 @@
 #include "select.h"
 #include "delete.h"
 #include "database.h"
+
 #include <assert.h>
 
 //+----------------------------------------------------------------------------+

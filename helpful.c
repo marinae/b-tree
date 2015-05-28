@@ -220,25 +220,6 @@ size_t need_memory(block *x) {
 int print_tree(DB *db, block *cur) {
     static int count = 0;
     static int items = 0;
-    /*if (cur->num_children > 0) {
-        count++;
-        block *b = db->_read_block(db, cur->children[0]);
-        print_tree(db, b);
-        free_block(b);
-        for (size_t i = 1; i < cur->num_children; ++i) {
-            printf("******************** Separator:\n");
-            printf("%s\n", cur->items[i - 1]->key->data);
-            b = db->_read_block(db, cur->children[i]);
-            print_tree(db, b);
-            free_block(b);
-        }
-    } else {
-        printf("********** Leaf:\n");
-        for (size_t i = 1; i < cur->num_keys; ++i) {
-            printf("%s\n", cur->items[i]->key->data);
-            count++;
-        }
-    }*/
 
     printf("*** Block %d: %lu keys, %lu children\n", count, cur->num_keys, cur->num_children);
     ++count;

@@ -3,6 +3,7 @@
 
 #include "classes.h"
 #include "cache.h"
+#include "logger.h"
 #include "helpful.h"
 
 #include <stdlib.h>

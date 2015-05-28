@@ -6,6 +6,7 @@
 #include "classes.h"
 #include "helpful.h"
 #include "blocks.h"
+#include "logger.h"
 
 #include <stdlib.h>
 

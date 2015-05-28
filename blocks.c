@@ -4,7 +4,7 @@
 //| Write block                                                                |
 //+----------------------------------------------------------------------------+
 
-int write_block(struct DB *db, size_t k, struct block *b) {
+int write_block(int fd, struct DB *db, size_t k, struct block *b) {
     /* Check params */
     assert(db && db->info && b);
     assert(b->items || b->num_keys == 0);
@@ -15,9 +15,13 @@ int write_block(struct DB *db, size_t k, struct block *b) {
     /* Calculate offset of block */
     size_t offset = db->info->block_size * k;
 
+    /* Change offset */
+    if (fd == db->info->fd)
+        lseek(fd, offset, SEEK_SET);
+
     /* Write key-value count */
-    lseek(db->info->fd, offset, SEEK_SET);
-    write(db->info->fd, (void *)&b->num_keys, sizeof(size_t));
+    if (-1 == write(fd, (void *)&b->num_keys, sizeof(size_t)))
+        return 1;
 
     /* Write pairs of keys and values */
     for (int i = 0; i < b->num_keys; ++i) {
@@ -29,35 +33,43 @@ int write_block(struct DB *db, size_t k, struct block *b) {
         DBT *key = it->key;
         DBT *val = it->value;
         /* Write key size */
-        write(db->info->fd, (void *)&key->size, sizeof(key->size));
+        if (-1 == write(fd, (void *)&key->size, sizeof(key->size)))
+            return 1;
         /* Write key */
-        write(db->info->fd, it->key->data, it->key->size);
+        if (-1 == write(fd, it->key->data, it->key->size))
+            return 1;
         /* Write value size */
-        write(db->info->fd, (void *)&val->size, sizeof(val->size));
+        if (-1 == write(fd, (void *)&val->size, sizeof(val->size)))
+            return 1;
         /* Write value */    
-        write(db->info->fd, it->value->data, it->value->size);
+        if (-1 == write(fd, it->value->data, it->value->size))
+            return 1;
     }
 
     /* Write count of child nodes */
     size_t ch_count = b->num_children;
-    write(db->info->fd, (void *)&ch_count, sizeof(ch_count));
+    if (-1 == write(fd, (void *)&ch_count, sizeof(ch_count)))
+        return 1;
 
     /* Write child nodes */
     for (int j = 0; j < ch_count; ++j) {
         /* Write child index */
         size_t index = b->children[j];
-        write(db->info->fd, (void *)&index, sizeof(index));
+        if (-1 == write(fd, (void *)&index, sizeof(index)))
+            return 1;
     }
 
     /* Mark block as busy */
-    return db->_mark_block(db, k, 1);
+    if (fd == db->info->fd)
+        return db->_mark_block(db, k, 1);
+    return 0;
 }
 
 //+----------------------------------------------------------------------------+
 //| Read block                                                                 |
 //+----------------------------------------------------------------------------+
 
-block *read_block(DB *db, size_t k) {
+block *read_block(int fd, DB *db, size_t k) {
     /* Check params */
     assert(db && db->info);
     assert(k >= db->info->first_node && k <= db->info->num_blocks);
@@ -66,8 +78,6 @@ block *read_block(DB *db, size_t k) {
     size_t offset = db->info->block_size * k;
     /* Allocate memory for block */
     block *b = (struct block *)calloc(1, sizeof(struct block));
-    /* Assign shorter name */
-    int fd = db->info->fd;
     /* Read key-value count */
     lseek(fd, offset, SEEK_SET);
     read(fd, (void *)&b->num_keys, sizeof(size_t));
@@ -193,7 +203,8 @@ int mark_block(struct DB *db, size_t k, bool state) {
     }
     /* Sync with disc */
     lseek(info->fd, info->block_size, SEEK_SET);
-    write(info->fd, (void *)info->bitmap, info->bitmap_len);
+    if (-1 == write(info->fd, (void *)info->bitmap, info->bitmap_len))
+        return 1;
 
     return 0;
 }

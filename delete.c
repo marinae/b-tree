@@ -218,7 +218,7 @@ int merge_children(DB *db, block *x, size_t j, size_t k, DBT *key) {
     }
     x->num_children -= 1;
     /* Write changes */
-    result = db->_write_block(db, k, x);
+    result |= db->_write_block(db, k, x);
 
     /* Free allocated structures */
 	free_block(left);

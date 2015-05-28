@@ -18,7 +18,6 @@ DB *dbopen(char *file) {
     }
 
     // TODO: fill db parameters
-    // TODO: crash-safe
 
     /* Fill private API */
     db->_write_block      = c_write_block;
@@ -32,6 +31,9 @@ DB *dbopen(char *file) {
     db->_select = f_select;
     db->_sync   = f_sync;
 
+    /* Scan WAL and synchronize */
+    db->_sync(db);
+
     return db;
 }
 
@@ -42,7 +44,6 @@ DB *dbopen(char *file) {
 DB *dbcreate(char *file, DBC conf) {  
     /* Check params */
     assert(file);
-
     /* Allocate memory for structure */
     DB *db = (DB *)calloc(1, sizeof(DB));
     /* Create file for database */
@@ -71,8 +72,9 @@ DB *dbcreate(char *file, DBC conf) {
         .bitmap_blocks = bitmap_blocks,
         .bitmap        = bitmap,
         .first_node    = bitmap_blocks + 1,
-        .root_index    = bitmap_blocks + 1
+        .root_index    = bitmap_blocks + 1,
     };
+    /* Fill info */
     db->info = (DB_info *)calloc(1, sizeof(DB_info));
     memcpy(db->info, &info, sizeof(info));
     /* Fill cache info */
@@ -85,6 +87,16 @@ DB *dbcreate(char *file, DBC conf) {
     };
     db->cache = (block_cache *)calloc(1, sizeof(block_cache));
     memcpy(db->cache, &cache, sizeof(cache));
+    /* Create WAL */
+    Log *logger = log_open(db);
+    if (!logger) {
+        free(db->info->bitmap);
+        free(db->info);
+        free(db->cache);
+        free(db);
+        return NULL;
+    }
+    db->logger = logger;
     /* Print DB parameters */
     printf("Block size       = %lu bytes\n", db->info->block_size);
     printf("Num blocks       = %lu\n", db->info->num_blocks);
@@ -101,6 +113,7 @@ DB *dbcreate(char *file, DBC conf) {
     if (written != sizeof(hr)) {
         free(db->info->bitmap);
         free(db->info);
+        free(db->cache);
         free(db);
         return NULL;
     }
@@ -110,6 +123,7 @@ DB *dbcreate(char *file, DBC conf) {
     if (written != db->info->bitmap_len) {
         free(db->info->bitmap);
         free(db->info);
+        free(db->cache);
         free(db);
         return NULL;
     }
@@ -125,15 +139,8 @@ DB *dbcreate(char *file, DBC conf) {
     /* Set max key size */
     db->max_key_size = 0;
     /* Fill private API */
-    if (db->cache->max_blocks > 0) {
-        /* RW operations with cache */
-        db->_write_block      = c_write_block;
-        db->_read_block       = c_read_block;
-    } else {
-        /* RW operations without cache */
-        db->_write_block      = write_block;
-        db->_read_block       = read_block;
-    }
+    db->_write_block      = c_write_block;
+    db->_read_block       = c_read_block;
     db->_find_empty_block = find_empty_block;
     db->_mark_block       = mark_block;
     /* Fill public API */

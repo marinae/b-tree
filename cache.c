@@ -6,6 +6,15 @@
 
 int c_write_block(DB *db, size_t k, block *b_new) {
 	assert(db && b_new);
+	/* Create WAL record */
+	Record record = {
+		.lsn      = db->logger->log_count,
+		.block_id = k,
+		.b        = b_new
+	};
+	/* Write changed page to WAL */
+	if (log_write(db, &record))
+		return 1;
 	/* Search this block in cache */
 	block *b = search_in_cache(db->cache->hashed_blocks, k);
 	if (b != NULL) {
@@ -19,7 +28,7 @@ int c_write_block(DB *db, size_t k, block *b_new) {
 		return copy_block_to(b, b_new);
 
 	} else {
-		return write_block(db, k, b_new);
+		return write_block(db->info->fd, db, k, b_new);
 	}
 }
 
@@ -72,14 +81,14 @@ block *add_to_cache(DB *db, size_t k) {
 		/* Pop last used block from cache (last item in list) */
 		if (db->cache->max_blocks == 0) {
 			/* No caching */
-			return read_block(db, k);
+			return read_block(db->info->fd, db, k);
 		} else {
 			pop_back(db, db->cache);
 		}
 	}
 	assert(db->cache->n_blocks < db->cache->max_blocks);
 	/* Read block from disc */
-	block *b = read_block(db, k);
+	block *b = read_block(db->info->fd, db, k);
 	block *b_copy = copy_block(b);
 	b_copy->id = k;
 	/* Create pointer to this block */
@@ -98,7 +107,7 @@ block *add_to_cache(DB *db, size_t k) {
 }
 
 //+----------------------------------------------------------------------------+
-//| Prepend block to double-ended list                                         |
+//| Prepend block to double-linked list                                        |
 //+----------------------------------------------------------------------------+
 
 int push_front(block_cache *cache, block *b) {
@@ -156,8 +165,10 @@ int pop_back(DB *db, block_cache *cache) {
 	/* Find last element */
 	block *last = cache->lru_end;
 	/* Flush on disc if DIRTY */
-	if (last->status == DIRTY)
-		write_block(db, last->id, last);
+	if (last->status == DIRTY) {
+		if (write_block(db->info->fd, db, last->id, last))
+			return 1;
+	}
 	/* Change properties of previous block (if it exists) */
 	if (cache->n_blocks > 1) {
 		assert(last->lru_prev);
@@ -187,8 +198,10 @@ int flush_cache(DB *db) {
 	assert(db && db->cache);
 	block *b = db->cache->lru;
 	while (b) {
-		if (b->status == DIRTY)
-			write_block(db, b->id, b);
+		if (b->status == DIRTY) {
+			if (write_block(db->info->fd, db, b->id, b))
+				return 1;
+		}
 		#ifdef _DEBUG_CACHE_MODE_
 		printf("Block %lu removed from cache, total blocks: %lu\n", b->id, db->cache->n_blocks - 1);
 		#endif /* _DEBUG_CACHE_MODE_ */

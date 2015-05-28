@@ -63,6 +63,8 @@ typedef struct block {
 	struct block        *lru_next;
 	struct block        *lru_prev;
 	enum {DIRTY, CLEAN} status;
+	/* For journaling */
+	size_t lsn;
 } block;
 
 //+----------------------------------------------------------------------------+
@@ -88,6 +90,25 @@ typedef struct block_cache {
 	/* Quick look up by block ID */
 	hashed_pointer *hashed_blocks;
 } block_cache;
+
+//+----------------------------------------------------------------------------+
+//| Logger class                                                               |
+//+----------------------------------------------------------------------------+
+
+typedef struct Log {
+	int    log_fd;
+    size_t log_count;
+} Log;
+
+//+----------------------------------------------------------------------------+
+//| Single record in log file                                                  |
+//+----------------------------------------------------------------------------+
+
+typedef struct Record {
+	size_t lsn;
+	size_t block_id;
+	block  *b;
+} Record;
 
 //+----------------------------------------------------------------------------+
 //| Database API                                                               |
@@ -124,6 +145,7 @@ typedef struct DB {
     block       *root;
     size_t      max_key_size;
     block_cache *cache;
+    Log         *logger;
 } DB; /* Need for supporting multiple backends (HASH/BTREE) */
 
 //+----------------------------------------------------------------------------+
