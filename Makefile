@@ -1,9 +1,10 @@
 CC=gcc
 CFLAGS=-std=c99
 LDFLAGS=-shared -fPIC
-SOURCES=blocks.c cache.c helpful.c insert.c select.c delete.c database.c mydb.c
+SOURCES=blocks.c cache.c logger.c helpful.c insert.c select.c delete.c database.c mydb.c
 LIBRARY=libmydb.so
 DATABASE=mydbpath
+WAL=wal
 EXE=./runner/test_speed
 WDIR=./workloads
 
@@ -16,6 +17,7 @@ sophia:
 clean:
 	rm $(LIBRARY)
 	rm $(DATABASE)
+	rm $(WAL)
 	rm $(WDIR)/*.yours
 
 test1:
