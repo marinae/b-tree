@@ -5,20 +5,30 @@
 //+----------------------------------------------------------------------------+
 
 int f_close(DB *db) {
-    /* Check params */
-    assert(db && db->info && db->root);
     /* Sync cache to disc */
-    flush_cache(db);
+    if (db && db->cache)
+        flush_cache(db);
     /* Close WAL */
-    log_close(db);
+    if (db && db->logger)
+        log_close(db);
     /* Close DB file */
-    close(db->info->fd);
+    if (db && db->info)
+        close(db->info->fd);
+
     /* Free DB parameters */
-    free(db->info->bitmap);
-    free(db->info);
-    free(db->logger);
-    free_block(db->root);
-    free(db);
+    if (db && db->info && db->info->bitmap)
+        free(db->info->bitmap);
+    if (db && db->info && db->info->hdr)
+        free(db->info->hdr);
+    if (db && db->info)
+        free(db->info);
+    if (db->logger)
+        free(db->logger);
+    if (db->root)
+        free_block(db->root);
+    if (db)
+        free(db);
+    
     return 0;
 }
 
@@ -29,6 +39,6 @@ int f_close(DB *db) {
 int f_sync(DB *db) {
     /* Check params */
     assert(db && db->info && db->root);
-    // TODO: scan WAL
+    // TODO: scan WAL and do recovery
     return 0;
 }

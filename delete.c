@@ -10,7 +10,7 @@ int f_delete(DB *db, DBT *key) {
     assert(key && key->data);
 
     /* Delete - start from root */
-    return delete_from(db, db->root, db->info->root_index, key);
+    return delete_from(db, db->root, db->info->hdr->root_index, key);
 }
 
 //+----------------------------------------------------------------------------+
@@ -21,7 +21,7 @@ int delete_from(DB *db, block *x, size_t k, DBT *key) {
 	/* Check params */
     assert(db && db->info && db->root);
     assert(x && key && key->data);
-    assert(k >= db->info->first_node && k <= db->info->num_blocks);
+    assert(k >= db->info->hdr->first_node && k <= db->info->hdr->num_blocks);
 
 	/* Result of deleting */
 	int result = 0;
@@ -91,7 +91,7 @@ int delete_from(DB *db, block *x, size_t k, DBT *key) {
 int delete_here(DB *db, block *x, size_t k, size_t j) {
 	/* Check params */
     assert(db && db->info && db->root);
-    assert(x && k >= db->info->first_node && k <= db->info->num_blocks);
+    assert(x && k >= db->info->hdr->first_node && k <= db->info->hdr->num_blocks);
     assert(x->num_children == 0);
     assert(j < x->num_keys);
 
@@ -134,7 +134,7 @@ bool can_merge(DB *db, block *x, size_t j) {
 
     /* Compute total amount of memory */
     size_t needed_mem = left_mem + right_mem;
-    needed_mem += sizeof(size_t) * 2 + db->max_key_size;
+    needed_mem += sizeof(size_t) * 2 + db->info->hdr->max_key_size;
     if (left->num_children > 0)
         needed_mem += 8;
 
@@ -142,7 +142,7 @@ bool can_merge(DB *db, block *x, size_t j) {
     free_block(left);
     free_block(right);
 
-    return (needed_mem <= db->info->block_size);
+    return (needed_mem <= db->info->hdr->block_size);
 }
 
 //+----------------------------------------------------------------------------+
@@ -153,7 +153,7 @@ int merge_children(DB *db, block *x, size_t j, size_t k, DBT *key) {
 	/* Check params */
     assert(db && db->info && db->root);
     assert(x && key && key->data);
-    assert(k >= db->info->first_node && k <= db->info->num_blocks);
+    assert(k >= db->info->hdr->first_node && k <= db->info->hdr->num_blocks);
     assert(j < x->num_children && (j+1) < x->num_children);
 
     /* Result of merging */
@@ -235,7 +235,7 @@ int replace_key(DB *db, block *x, size_t j, size_t k, DBT *key) {
 	/* Check params */
     assert(db && db->info && db->root);
     assert(x && key && key->data);
-    assert(k >= db->info->first_node && k <= db->info->num_blocks);
+    assert(k >= db->info->hdr->first_node && k <= db->info->hdr->num_blocks);
     assert(j < x->num_children && (j+1) < x->num_children);
 
     /* Result of replacing key in block */

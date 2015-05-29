@@ -7,17 +7,23 @@
 Log *log_open(DB *db) {
 	assert(db);
 	/* Create file for write-ahead logging */
-    int log_fd = open("wal", O_CREAT | O_RDWR, S_IRWXU);
+    int log_fd = open(WAL_FILE, O_CREAT | O_RDWR, S_IRWXU);
     if (log_fd == -1)
         return NULL;
     /* Create structure */
     Log wal = {
-    	.log_fd    = log_fd,
-    	.log_count = 0
+        .log_file_len  = sizeof(WAL_FILE),
+        .log_file_name = NULL,
+    	.log_fd        = log_fd,
+    	.log_count     = 0
     };
+    wal.log_file_name = (char *)calloc(sizeof(WAL_FILE), sizeof(char));
+    memcpy(wal.log_file_name, (void *)WAL_FILE, sizeof(WAL_FILE));
+
     /* Copy to pointer */
     Log *logger = (Log *)calloc(1, sizeof(Log));
     memcpy(logger, &wal, sizeof(wal));
+
     return logger;
 }
 

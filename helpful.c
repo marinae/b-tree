@@ -159,12 +159,12 @@ bool enough_mem(DB *db, block *b, DBT *key, DBT *value) {
 
     /* Compute needed memory size */
     size_t needed_mem = need_memory(b);
-    needed_mem += sizeof(size_t) * 2 + db->max_key_size;
+    needed_mem += sizeof(size_t) * 2 + db->info->hdr->max_key_size;
     if (b->num_children > 0)
         needed_mem += 8;
 
     /* Compare them */
-    return (needed_mem <= db->info->block_size);
+    return (needed_mem <= db->info->hdr->block_size);
 }
 
 //+----------------------------------------------------------------------------+
@@ -174,16 +174,16 @@ bool enough_mem(DB *db, block *b, DBT *key, DBT *value) {
 int make_root(DB *db, size_t k) {
     /* Check params */
     assert(db && db->info && db->root);
-    assert(k >= db->info->first_node && k <= db->info->num_blocks);
+    assert(k >= db->info->hdr->first_node && k <= db->info->hdr->num_blocks);
 
     /* Make k the new root index with one child (old root) */
     free_block(db->root);
     db->root = (block *)calloc(1, sizeof(block));
 
-    db->root->num_children = 1;
-    db->root->children = (size_t *)calloc(1, sizeof(size_t));
-    db->root->children[0] = db->info->root_index;
-    db->info->root_index = k;
+    db->root->num_children    = 1;
+    db->root->children        = (size_t *)calloc(1, sizeof(size_t));
+    db->root->children[0]     = db->info->hdr->root_index;
+    db->info->hdr->root_index = k;
 
     return db->_mark_block(db, k, 1);
 }

@@ -13,7 +13,7 @@ int f_insert(DB *db, DBT *key, DBT *value) {
     int result = 0;
 
     /* Assign shorter name */
-    size_t root_id = db->info->root_index;
+    size_t root_id = db->info->hdr->root_index;
 
     /* Compare free memory with busy */
     if (enough_mem(db, db->root, key, value)) {
@@ -45,8 +45,8 @@ int f_insert(DB *db, DBT *key, DBT *value) {
         printf("Error while inserting key %s\n", key->data);
 
     /* Update current maximum key+value size in database */
-    if (key->size + value->size > db->max_key_size)
-        db->max_key_size = key->size + value->size;
+    if (key->size + value->size > db->info->hdr->max_key_size)
+        db->info->hdr->max_key_size = key->size + value->size;
 
     return result;
 }
@@ -59,7 +59,7 @@ int insert_nonfull(DB *db, block *x, size_t k, DBT *key, DBT *value) {
     /* Check params */
     assert(db && db->info && db->root && x);
     assert(key && key->data && value && value->data);
-    assert(k >= db->info->first_node && k <= db->info->num_blocks);
+    assert(k >= db->info->hdr->first_node && k <= db->info->hdr->num_blocks);
 
     /* Result of operation */
     int result = 0;
@@ -150,8 +150,8 @@ int split_child(DB *db, block *x, size_t x_block, size_t child) {
     	}
     	result = insert_item(db, x, x_block, it->key, it->value, z_block);
     	/* Write blocks y and z to disc */
-    	assert(need_memory(y) <= db->info->block_size);
-    	assert(need_memory(z) <= db->info->block_size);
+    	assert(need_memory(y) <= db->info->hdr->block_size);
+    	assert(need_memory(z) <= db->info->hdr->block_size);
     	result |= db->_write_block(db, w_block, y);
     	result |= db->_write_block(db, z_block, z);
     	/* Free allocated structures */
@@ -169,7 +169,7 @@ int insert_item(DB *db, block *x, size_t k, DBT *key, DBT *value, size_t chd) {
 	/* Check params */
 	assert(db && db->info && x);
     assert(key && key->data && value && value->data);
-    assert(k >= db->info->first_node && k <= db->info->num_blocks);
+    assert(k >= db->info->hdr->first_node && k <= db->info->hdr->num_blocks);
 
     /* Index of inserting */
     size_t i = contains_key(x, key);
@@ -205,7 +205,7 @@ int insert_item(DB *db, block *x, size_t k, DBT *key, DBT *value, size_t chd) {
     	x->children[i + 1] = chd;
     }
     /* Write block on disc */
-    assert(need_memory(x) <= db->info->block_size);
+    assert(need_memory(x) <= db->info->hdr->block_size);
     return db->_write_block(db, k, x);
 }
 

@@ -9,11 +9,11 @@ int write_block(int fd, struct DB *db, size_t k, struct block *b) {
     assert(db && db->info && b);
     assert(b->items || b->num_keys == 0);
     assert(b->children || b->num_children == 0);
-    assert(k >= db->info->first_node && k <= db->info->num_blocks);
-    assert(need_memory(b) <= db->info->block_size);
+    assert(k >= db->info->hdr->first_node && k <= db->info->hdr->num_blocks);
+    assert(need_memory(b) <= db->info->hdr->block_size);
 
     /* Calculate offset of block */
-    size_t offset = db->info->block_size * k;
+    size_t offset = db->info->hdr->block_size * k;
 
     /* Change offset */
     if (fd == db->info->fd)
@@ -72,10 +72,10 @@ int write_block(int fd, struct DB *db, size_t k, struct block *b) {
 block *read_block(int fd, DB *db, size_t k) {
     /* Check params */
     assert(db && db->info);
-    assert(k >= db->info->first_node && k <= db->info->num_blocks);
+    assert(k >= db->info->hdr->first_node && k <= db->info->hdr->num_blocks);
 
     /* Calculate offset of block */
-    size_t offset = db->info->block_size * k;
+    size_t offset = db->info->hdr->block_size * k;
     /* Allocate memory for block */
     block *b = (struct block *)calloc(1, sizeof(struct block));
     /* Read key-value count */
@@ -157,7 +157,7 @@ size_t find_empty_block(struct DB *db) {
                 char j_bit = 1 << (7 - j);
 
                 if ((bit | j_bit) != bit)
-                    return db->info->first_node + i * 8 + j;
+                    return db->info->hdr->first_node + i * 8 + j;
             }
             printf("An error occured in blocks.c (find)\n");
             return 0;
@@ -181,12 +181,12 @@ int mark_block(struct DB *db, size_t k, bool state) {
     /* Assign shorter name */
     DB_info *info = db->info;
     /* Check bounds */
-    if (k > info->num_blocks || k < info->first_node) {
+    if (k > info->hdr->num_blocks || k < info->hdr->first_node) {
         printf("An error occured in blocks.c (mark)\n");
         return -1;
     }
     /* Subtract header blocks */
-    k -= info->first_node;
+    k -= info->hdr->first_node;
     /* Compute indices */
     int i = k / 8;
     int j = k - i * 8;
@@ -202,7 +202,7 @@ int mark_block(struct DB *db, size_t k, bool state) {
         info->bitmap[i] &= new_bit;
     }
     /* Sync with disc */
-    lseek(info->fd, info->block_size, SEEK_SET);
+    lseek(info->fd, info->hdr->block_size, SEEK_SET);
     if (-1 == write(info->fd, (void *)info->bitmap, info->bitmap_len))
         return 1;
 

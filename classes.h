@@ -16,29 +16,27 @@ typedef struct DBT {
 } DBT;
 
 //+----------------------------------------------------------------------------+
-//| Database info                                                              |
-//+----------------------------------------------------------------------------+
-
-typedef struct DB_info {
-	int    fd;
-    size_t block_size;
-    size_t num_blocks;
-    size_t bitmap_len;
-    size_t bitmap_blocks;
-    char   *bitmap;
-    size_t first_node;
-    size_t root_index;
-} DB_info;
-
-//+----------------------------------------------------------------------------+
 //| Database header                                                            |
 //+----------------------------------------------------------------------------+
 
 typedef struct header {
 	size_t block_size;
 	size_t num_blocks;
+	size_t first_node;
 	size_t root_index;
+	size_t max_key_size;
 } header;
+
+//+----------------------------------------------------------------------------+
+//| Database info                                                              |
+//+----------------------------------------------------------------------------+
+
+typedef struct DB_info {
+	int    fd;
+    header *hdr;
+    size_t bitmap_len;
+    char   *bitmap;
+} DB_info;
 
 //+----------------------------------------------------------------------------+
 //| Database item                                                              |
@@ -96,6 +94,8 @@ typedef struct block_cache {
 //+----------------------------------------------------------------------------+
 
 typedef struct Log {
+	size_t log_file_len;
+	char   *log_file_name;
 	int    log_fd;
     size_t log_count;
 } Log;
@@ -143,7 +143,6 @@ typedef struct DB {
     /* DB parameters: file descriptor, node size, root offset, etc. */
     DB_info     *info;
     block       *root;
-    size_t      max_key_size;
     block_cache *cache;
     Log         *logger;
 } DB; /* Need for supporting multiple backends (HASH/BTREE) */
