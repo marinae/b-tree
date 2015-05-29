@@ -2,5 +2,6 @@ libmydb.so
 mydbpath
 wal
 sophia/third_party/
-workloads/*.out.yours
+workloads/*
 runner/test_speed
+gen_workload/*

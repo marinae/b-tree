@@ -36,6 +36,10 @@ test4:
 	$(EXE) $(WDIR)/rwd-workloads $(LIBRARY)
 	diff $(WDIR)/rwd-workloads.out $(WDIR)/rwd-workloads.out.yours
 
+wal_test:
+	$(EXE) $(WDIR)/select_workload $(LIBRARY)
+	diff $(WDIR)/select_workload.out $(WDIR)/select_workload.out.yours
+
 test:
 	make test1
 	make test2
