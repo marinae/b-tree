@@ -23,5 +23,6 @@ int    mark_block(DB *db, size_t k, bool state);
 block  *copy_block(block *b);
 int    copy_block_to(block *b, block *b_new);
 int    blockcpy(block *b, block *b_copy);
+size_t get_lsn(DB *db, size_t k);
 
 #endif /* __BLOCKS_H__ */

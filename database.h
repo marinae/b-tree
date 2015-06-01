@@ -1,6 +1,8 @@
 #ifndef __DATABASE_H__
 #define __DATABASE_H__
 
+#define _DEBUG_RECOVERY_MODE_
+
 #include "classes.h"
 #include "cache.h"
 #include "logger.h"

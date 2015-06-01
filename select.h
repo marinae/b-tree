@@ -1,6 +1,8 @@
 #ifndef __SELECT_H__
 #define __SELECT_H__
 
+//#define _DEBUG_SELECT_MODE_
+
 #include "classes.h"
 #include "helpful.h"
 

@@ -1,6 +1,8 @@
 #ifndef __MYDB_H__
 #define __MYDB_H__
 
+#define _DEBUG_DB_MODE_
+
 #include "classes.h"
 #include "blocks.h"
 #include "cache.h"
@@ -31,7 +33,7 @@
 //| Functions for initializing DB                                              |
 //+----------------------------------------------------------------------------+
 
-DB *dbopen(char *file);
+DB *dbopen(char *file, DBC conf);
 DB *dbcreate(char *file, DBC conf);
 
 //+----------------------------------------------------------------------------+
@@ -41,8 +43,10 @@ DB *dbcreate(char *file, DBC conf);
 int fill_header(size_t block_size, size_t num_blocks, size_t bitmap_len, header **hdr);
 int fill_db_info(DBC conf, int fd, DB_info **info);
 int create_cache(size_t max_cached, block_cache **cache);
-int create_log(DB *db);
+int create_log(DB *db, char *log_file_name);
 int write_headers(DB *db);
+DB_info *read_headers(int fd);
+char *read_log_params(int fd);
 
 //+----------------------------------------------------------------------------+
 //| Functions calling DB API                                                   |

@@ -9,6 +9,10 @@ int f_select(DB *db, DBT *key, DBT *value) {
     assert(db && db->info && db->root);
     assert(key && key->data && value);
 
+    #ifdef _DEBUG_SELECT_MODE_
+    printf("Searching for key %s in block %lu\n", key->data, db->info->hdr->root_index);
+    #endif /* _DEBUG_SELECT_MODE_ */
+
     return key_search(db, db->root, key, value);
 }
 
@@ -35,15 +39,29 @@ int key_search(DB *db, block *cur, DBT *key, DBT *value) {
 
     } else if (cur->num_children == 0) {
         /* Key not found in leaf */
+        #ifdef _DEBUG_SELECT_MODE_
+        printf("Key not found\n");
+        #endif /* _DEBUG_SELECT_MODE_ */
+
     	result = -1;
 
     } else {
     	/* Key is in child node */
+        #ifdef _DEBUG_SELECT_MODE_
+        printf("Searching for key %s in block %lu\n", key->data, cur->children[i]);
+        #endif /* _DEBUG_SELECT_MODE_ */
+
+        printf("Reading block k = %lu (key search)\n", cur->children[i]);
     	block *child = db->_read_block(db, cur->children[i]);
     	assert(child);
     	result = key_search(db, child, key, value);
     	free_block(child);
     }
+
+    #ifdef _DEBUG_SELECT_MODE_
+    printf("Key found\n");
+    #endif /* _DEBUG_SELECT_MODE_ */
+
     return result;
 }
 

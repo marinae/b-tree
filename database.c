@@ -6,8 +6,8 @@
 
 int f_close(DB *db) {
     /* Sync cache to disc */
-    if (db && db->cache)
-        flush_cache(db);
+    if (db && db->cache && db->logger)
+        flush_cache(db, db->logger->log_fd);
     /* Close WAL */
     if (db && db->logger)
         log_close(db);
@@ -28,7 +28,7 @@ int f_close(DB *db) {
         free_block(db->root);
     if (db)
         free(db);
-    
+
     return 0;
 }
 
@@ -39,6 +39,28 @@ int f_close(DB *db) {
 int f_sync(DB *db) {
     /* Check params */
     assert(db && db->info && db->root);
-    // TODO: scan WAL and do recovery
+
+    /* Seek last checkpoint */
+    log_seek(db);
+
+    Record *rec;
+    static size_t count = 0;
+
+    while ((rec = log_read_next(db))) {
+        /* Check block LSN in database */
+        size_t lsn = get_lsn(db, rec->block_id);
+
+        if (lsn < rec->b->lsn) {
+            ++count;
+            #ifdef _DEBUG_RECOVERY_MODE_
+            printf("%lu. Block %lu is out-of-date: %lu vs %lu\n", count, rec->block_id, lsn, rec->b->lsn);
+            #endif /* _DEBUG_RECOVERY_MODE_ */
+        }
+
+        /* Free allocated memory */
+        free_block(rec->b);
+        free(rec);
+    }
+
     return 0;
 }

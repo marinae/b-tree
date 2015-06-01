@@ -21,6 +21,6 @@ block  *add_to_cache(DB *db, size_t k);
 int    push_front(block_cache *cache, block *b);
 int    repush_front(block_cache *cache, block *b); 
 int    pop_back(DB *db, block_cache *cache);
-int    flush_cache(DB *db);
+int    flush_cache(DB *db, size_t lsn);
 
 #endif /* __CACHE_H__ */

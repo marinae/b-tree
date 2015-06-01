@@ -19,8 +19,12 @@ int write_block(int fd, struct DB *db, size_t k, struct block *b) {
     if (fd == db->info->fd)
         lseek(fd, offset, SEEK_SET);
 
+    /* Write LSN */
+    if (-1 == write(fd, (void *)&b->lsn, sizeof(b->lsn)))
+        return 1;
+
     /* Write key-value count */
-    if (-1 == write(fd, (void *)&b->num_keys, sizeof(size_t)))
+    if (-1 == write(fd, (void *)&b->num_keys, sizeof(b->num_keys)))
         return 1;
 
     /* Write pairs of keys and values */
@@ -72,14 +76,22 @@ int write_block(int fd, struct DB *db, size_t k, struct block *b) {
 block *read_block(int fd, DB *db, size_t k) {
     /* Check params */
     assert(db && db->info);
+    printf("k = %lu, first node: %lu, last node: %lu\n", k, db->info->hdr->first_node, db->info->hdr->num_blocks);
     assert(k >= db->info->hdr->first_node && k <= db->info->hdr->num_blocks);
 
     /* Calculate offset of block */
     size_t offset = db->info->hdr->block_size * k;
+
     /* Allocate memory for block */
     block *b = (struct block *)calloc(1, sizeof(struct block));
+
+    /* Change offset */
+    if (fd == db->info->fd)
+        lseek(fd, offset, SEEK_SET);
+
+    /* Read LSN */
+    read(fd, (void *)&b->lsn, sizeof(size_t));
     /* Read key-value count */
-    lseek(fd, offset, SEEK_SET);
     read(fd, (void *)&b->num_keys, sizeof(size_t));
     /* Allocate memory for items */
     b->items = (item **)calloc(b->num_keys, sizeof(item *));
@@ -121,7 +133,7 @@ block *read_block(int fd, DB *db, size_t k) {
         }
         free(b->items);
         free(b);
-        printf("An error occured in blocks.c (read)\n");
+        printf("An error occured in blocks.c (read): block %lu\n", k);
         return NULL;
     }
     b->children = (size_t *)calloc(b->num_children, sizeof(size_t));
@@ -202,7 +214,7 @@ int mark_block(struct DB *db, size_t k, bool state) {
         info->bitmap[i] &= new_bit;
     }
     /* Sync with disc */
-    lseek(info->fd, info->hdr->block_size, SEEK_SET);
+    lseek(info->fd, info->hdr->bitmap_offset, SEEK_SET);
     if (-1 == write(info->fd, (void *)info->bitmap, info->bitmap_len))
         return 1;
 
@@ -277,4 +289,26 @@ int blockcpy(block *b, block *b_copy) {
             b_copy->children[j] = b->children[j];
     }
     return 0;
+}
+
+//+----------------------------------------------------------------------------+
+//| Read only LSN of a block k                                                 |
+//+----------------------------------------------------------------------------+
+
+size_t get_lsn(DB *db, size_t k) {
+    /* Check params */
+    assert(db && db->info);
+    assert(k >= db->info->hdr->first_node && k <= db->info->hdr->num_blocks);
+
+    /* Calculate offset of block */
+    size_t offset = db->info->hdr->block_size * k;
+
+    /* Change offset */
+    lseek(db->info->fd, offset, SEEK_SET);
+
+    /* Read LSN */
+    size_t lsn;
+    read(db->info->fd, (void *)&lsn, sizeof(size_t));
+
+    return lsn;
 }

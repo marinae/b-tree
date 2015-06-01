@@ -11,8 +11,8 @@ size_t free_space(block *b, size_t block_size) {
     assert(b->children || b->num_children == 0);
 
     /* Busy space: */
-    /* 1. sizeof(num_keys + num_children) */
-    size_t busy = sizeof(size_t) * 2;
+    /* 1. sizeof(num_keys) + sizeof(num_children) + sizeof(lsn) */
+    size_t busy = sizeof(size_t) * 3;
 
     for (size_t i = 0; i < b->num_keys; ++i) {
         /* 2. sizeof(key->size + value->size) */
@@ -159,7 +159,7 @@ bool enough_mem(DB *db, block *b, DBT *key, DBT *value) {
 
     /* Compute needed memory size */
     size_t needed_mem = need_memory(b);
-    needed_mem += sizeof(size_t) * 2 + db->info->hdr->max_key_size;
+    needed_mem += sizeof(size_t) * 3 + db->info->hdr->max_key_size;
     if (b->num_children > 0)
         needed_mem += 8;
 
@@ -185,6 +185,10 @@ int make_root(DB *db, size_t k) {
     db->root->children[0]     = db->info->hdr->root_index;
     db->info->hdr->root_index = k;
 
+    /* Write changes to file */
+    lseek(db->info->fd, 0, SEEK_SET);
+    write(db->info->fd, (void*)db->info->hdr, sizeof(*(db->info->hdr)));
+
     return db->_mark_block(db, k, 1);
 }
 
@@ -197,8 +201,8 @@ size_t need_memory(block *x) {
     assert(x);
 
     /* Busy space: */
-    /* 1. sizeof(num_keys + num_children) */
-    size_t busy = sizeof(size_t) * 2;
+    /* 1. sizeof(num_keys) + sizeof(num_children) + sizeof(lsn) */
+    size_t busy = sizeof(size_t) * 3;
 
     for (size_t i = 0; i < x->num_keys; ++i) {
         /* 2. sizeof(key->size + value->size) */

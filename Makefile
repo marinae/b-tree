@@ -37,6 +37,9 @@ test4:
 	diff $(WDIR)/rwd-workloads.out $(WDIR)/rwd-workloads.out.yours
 
 wal_test:
+	rm $(DATABASE)
+	rm $(WAL)
+	$(EXE) $(WDIR)/insert_workload $(LIBRARY)
 	$(EXE) $(WDIR)/select_workload $(LIBRARY)
 	diff $(WDIR)/select_workload.out $(WDIR)/select_workload.out.yours
 

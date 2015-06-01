@@ -45,8 +45,13 @@ int f_insert(DB *db, DBT *key, DBT *value) {
         printf("Error while inserting key %s\n", key->data);
 
     /* Update current maximum key+value size in database */
-    if (key->size + value->size > db->info->hdr->max_key_size)
+    if (key->size + value->size > db->info->hdr->max_key_size) {
         db->info->hdr->max_key_size = key->size + value->size;
+
+        /* Write changes to file */
+        lseek(db->info->fd, 0, SEEK_SET);
+        write(db->info->fd, (void*)db->info->hdr, sizeof(*(db->info->hdr)));
+    }
 
     return result;
 }
@@ -81,6 +86,12 @@ int insert_nonfull(DB *db, block *x, size_t k, DBT *key, DBT *value) {
         /* Find child containing specific key range */
         int i = find_child(x, key);
         /* Read child block */
+        printf("Reading block k = %lu (insert nonfull 1)\n", x->children[i]);
+        printf ("Block %lu children:\n", k);
+        for (size_t m = 0; m < x->num_children; ++m) {
+            printf("%lu ", x->children[i]);
+        }
+        printf("\n");
         block *y = db->_read_block(db, x->children[i]);
         /* Check if block is full */
         if (!enough_mem(db, y, key, value)) {
@@ -93,12 +104,14 @@ int insert_nonfull(DB *db, block *x, size_t k, DBT *key, DBT *value) {
                 /* Edit value for key */
                 return replace_value(db, k, x, j, key, value);
             }
+            printf("Reading block k = %lu (insert nonfull 2)\n", x->children[i]);
         	y = db->_read_block(db, x->children[i]);
         	/* Compare key with new child */
         	if (compare_keys(x->items[i]->key, key) < 0) {
         		/* Load new child block */
         		++i;
         		free_block(y);
+                printf("Reading block k = %lu (insert nonfull 3)\n", x->children[i]);
         		y = db->_read_block(db, x->children[i]);
         	}
         }  
@@ -130,6 +143,7 @@ int split_child(DB *db, block *x, size_t x_block, size_t child) {
     	size_t w_block = x->children[child];
     	assert(x_block != w_block && x_block != z_block && w_block != z_block);
     	/* Read block y from disc */
+        printf("Reading block k = %lu (split child)\n", w_block);
     	block *w = db->_read_block(db, w_block);
     	assert(w);
     	/* Compute index of raised item from block w */

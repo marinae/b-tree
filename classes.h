@@ -24,6 +24,7 @@ typedef struct header {
 	size_t num_blocks;
 	size_t first_node;
 	size_t root_index;
+	size_t bitmap_offset;
 	size_t max_key_size;
 } header;
 
@@ -105,7 +106,6 @@ typedef struct Log {
 //+----------------------------------------------------------------------------+
 
 typedef struct Record {
-	size_t lsn;
 	size_t block_id;
 	block  *b;
 } Record;
