@@ -54,7 +54,6 @@ block* c_read_block(DB *db, size_t k) {
 
 	} else {
 		/* Not found -> read from disc and add to cache */
-		printf("Reading block k = %lu (c read block)\n", k);
 		return add_to_cache(db, k);
 	}
 }
@@ -83,7 +82,6 @@ block *add_to_cache(DB *db, size_t k) {
 		/* Pop last used block from cache (last item in list) */
 		if (db->cache->max_blocks == 0) {
 			/* No caching */
-			printf("Reading block k = %lu (add_to cache 1)\n", k);
 			return read_block(db->info->fd, db, k);
 		} else {
 			pop_back(db, db->cache);
@@ -91,7 +89,6 @@ block *add_to_cache(DB *db, size_t k) {
 	}
 	assert(db->cache->n_blocks < db->cache->max_blocks);
 	/* Read block from disc */
-	printf("Reading block k = %lu (add_to cache 2)\n", k);
 	block *b = read_block(db->info->fd, db, k);
 	block *b_copy = copy_block(b);
 	b_copy->id = k;
@@ -195,26 +192,20 @@ int pop_back(DB *db, block_cache *cache) {
 }
 
 //+----------------------------------------------------------------------------+
-//| Flush cache and clear                                                      |
+//| Flush cache                                                                |
 //+----------------------------------------------------------------------------+
 
 int flush_cache(DB *db, size_t lsn) {
 	assert(db && db->cache);
+
 	block *b = db->cache->lru;
+
 	while (b) {
 		if (b->status == DIRTY) {
-			printf("Flushing block %lu, lsn = %lu\n", b->id, lsn);
 			if (db->_write_block(db, b->id, b))
 				return 1;
 		}
-		/*#ifdef _DEBUG_CACHE_MODE_
-		printf("Block %lu removed from cache, total blocks: %lu\n", b->id, db->cache->n_blocks - 1);
-		#endif * _DEBUG_CACHE_MODE_ *
-		block *tmp = b;*/
 		b = b->lru_next;
-		/*free_block(tmp);
-		--db->cache->n_blocks;*/
 	}
-	//HASH_CLEAR(hh, db->cache->hashed_blocks);
 	return 0;
 }

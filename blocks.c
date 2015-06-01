@@ -76,7 +76,6 @@ int write_block(int fd, struct DB *db, size_t k, struct block *b) {
 block *read_block(int fd, DB *db, size_t k) {
     /* Check params */
     assert(db && db->info);
-    printf("k = %lu, first node: %lu, last node: %lu\n", k, db->info->hdr->first_node, db->info->hdr->num_blocks);
     assert(k >= db->info->hdr->first_node && k <= db->info->hdr->num_blocks);
 
     /* Calculate offset of block */

@@ -51,7 +51,6 @@ int key_search(DB *db, block *cur, DBT *key, DBT *value) {
         printf("Searching for key %s in block %lu\n", key->data, cur->children[i]);
         #endif /* _DEBUG_SELECT_MODE_ */
 
-        printf("Reading block k = %lu (key search)\n", cur->children[i]);
     	block *child = db->_read_block(db, cur->children[i]);
     	assert(child);
     	result = key_search(db, child, key, value);

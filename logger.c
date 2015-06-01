@@ -57,8 +57,8 @@ int log_write(DB *db, Record *record) {
     if (db->logger->log_count % CP_FREQUENCY == 0) {
         size_t lsn = db->logger->log_count;
         /* Flush cache */
-        if (flush_cache(db, lsn))
-            return 1;
+        //if (flush_cache(db, lsn))
+            //return 1;
         /* Print checkpoint */
         #ifdef _DEBUG_WAL_MODE_
         printf("0x%08x\t%lu\n", CHECKPOINT, lsn);
@@ -105,7 +105,6 @@ Record *log_read_next(DB *db) {
 
             /* Read block ID and block itself */
             read(db->logger->log_fd, &block_id, sizeof(block_id));
-            printf("Reading block k = %lu (log read next)\n", block_id);
             block *b = read_block(db->logger->log_fd, db, block_id);
 
             if (!b)
