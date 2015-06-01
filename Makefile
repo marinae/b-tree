@@ -44,9 +44,17 @@ wal_test:
 	diff $(WDIR)/select_workload.out $(WDIR)/select_workload.out.yours
 
 test:
+	rm $(DATABASE)
+	rm $(WAL)
 	make test1
+	rm $(DATABASE)
+	rm $(WAL)
 	make test2
+	rm $(DATABASE)
+	rm $(WAL)
 	make test3
+	rm $(DATABASE)
+	rm $(WAL)
 	make test4
 	
 	

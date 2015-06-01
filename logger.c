@@ -57,8 +57,8 @@ int log_write(DB *db, Record *record) {
     if (db->logger->log_count % CP_FREQUENCY == 0) {
         size_t lsn = db->logger->log_count;
         /* Flush cache */
-        //if (flush_cache(db, lsn))
-            //return 1;
+        if (flush_cache(db, lsn))
+            return 1;
         /* Print checkpoint */
         #ifdef _DEBUG_WAL_MODE_
         printf("0x%08x\t%lu\n", CHECKPOINT, lsn);

@@ -202,10 +202,14 @@ int flush_cache(DB *db, size_t lsn) {
 
 	while (b) {
 		if (b->status == DIRTY) {
-			if (db->_write_block(db, b->id, b))
+			/* Update block LSN */
+			b->lsn = lsn;
+			if (write_block(db->info->fd, db, b->id, b))
 				return 1;
 		}
+
 		b = b->lru_next;
 	}
+
 	return 0;
 }

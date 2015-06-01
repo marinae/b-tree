@@ -58,10 +58,10 @@ DB *dbopen(char *file, DBC conf) {
             success = 0;
     }
     /* Scan WAL and synchronize */
-    /*if (success) {
+    if (success) {
         if (db->_sync(db))
             success = 0;
-    }*/
+    }
     
     if (success) {
         /* Print DB parameters */

@@ -7,7 +7,7 @@
 int f_close(DB *db) {
     /* Sync cache to disc */
     if (db && db->cache && db->logger)
-        flush_cache(db, db->logger->log_fd);
+        flush_cache(db, db->logger->log_count);
     /* Close WAL */
     if (db && db->logger)
         log_close(db);
