@@ -15,10 +15,10 @@ sophia:
 	make -C sophia/
 
 clean:
-	rm $(LIBRARY)
-	rm $(DATABASE)
-	rm $(WAL)
-	rm $(WDIR)/*.yours
+	rm -f $(LIBRARY)
+	rm -f $(DATABASE)
+	rm -f $(WAL)
+	rm -f $(WDIR)/*.yours
 
 test1:
 	$(EXE) $(WDIR)/workload.lat $(LIBRARY)
@@ -37,24 +37,24 @@ test4:
 	diff $(WDIR)/rwd-workloads.out $(WDIR)/rwd-workloads.out.yours
 
 wal_test:
-	rm $(DATABASE)
-	rm $(WAL)
+	rm -f $(DATABASE)
+	rm -f $(WAL)
 	$(EXE) $(WDIR)/insert_workload $(LIBRARY)
 	$(EXE) $(WDIR)/select_workload $(LIBRARY)
 	diff $(WDIR)/select_workload.out $(WDIR)/select_workload.out.yours
 
 test:
-	rm $(DATABASE)
-	rm $(WAL)
+	rm -f $(DATABASE)
+	rm -f $(WAL)
 	make test1
-	rm $(DATABASE)
-	rm $(WAL)
+	rm -f $(DATABASE)
+	rm -f $(WAL)
 	make test2
-	rm $(DATABASE)
-	rm $(WAL)
+	rm -f $(DATABASE)
+	rm -f $(WAL)
 	make test3
-	rm $(DATABASE)
-	rm $(WAL)
+	rm -f $(DATABASE)
+	rm -f $(WAL)
 	make test4
 	
 	
