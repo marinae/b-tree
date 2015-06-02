@@ -6,8 +6,8 @@
 
 int f_close(DB *db) {
     /* Sync cache to disc */
-    if (db && db->cache && db->logger)
-        flush_cache(db, db->logger->log_count);
+    //if (db && db->cache && db->logger)
+        //flush_cache(db, db->logger->log_count);
     /* Close WAL */
     if (db && db->logger)
         log_close(db);
@@ -44,22 +44,29 @@ int f_sync(DB *db) {
     log_seek(db);
 
     Record *rec;
-    static size_t count = 0;
 
     while ((rec = log_read_next(db))) {
         /* Check block LSN in database */
         size_t lsn = get_lsn(db, rec->block_id);
 
         if (lsn < rec->b->lsn) {
-            ++count;
             #ifdef _DEBUG_RECOVERY_MODE_
-            printf("%lu. Block %lu is out-of-date: %lu vs %lu\n", count, rec->block_id, lsn, rec->b->lsn);
+            printf("Block %lu is out-of-date: %lu vs %lu\n", rec->block_id, lsn, rec->b->lsn);
             #endif /* _DEBUG_RECOVERY_MODE_ */
+
+            /* Replace block in database (but do not log this) */
+            if (write_block(db->info->fd, db, rec->block_id, rec->b))
+                break;
         }
 
         /* Free allocated memory */
         free_block(rec->b);
         free(rec);
+    }
+
+    if (rec) {
+        /* Write failed */
+        return 1;
     }
 
     return 0;
