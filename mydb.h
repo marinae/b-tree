@@ -2,6 +2,7 @@
 #define __MYDB_H__
 
 #define _DEBUG_DB_MODE_
+//#define _BAD_TEST_
 
 #include "classes.h"
 #include "blocks.h"

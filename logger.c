@@ -40,21 +40,8 @@ void log_close(DB *db) {
 
 int log_write(DB *db, Record *record) {
     assert(db && db->logger && record);
-    /* Write marker */
-    #ifdef _DEBUG_WAL_MODE_
-    printf("0x%08x\t%lu\t%lu\t\n", RECORD_MARKER, record->b->lsn, record->block_id);
-    #endif /* _DEBUG_WAL_MODE_ */
-    if (-1 == write(db->logger->log_fd, (void *)&RECORD_MARKER, sizeof(RECORD_MARKER)))
-        return 1;
-    /* Write block ID */
-    if (-1 == write(db->logger->log_fd, (void *)&record->block_id, sizeof(record->block_id)))
-        return 1;
-    /* Write block */
-    if (-1 == write_block(db->logger->log_fd, db, record->block_id, record->b))
-        return 1;
-    ++db->logger->log_count;
     /* Write checkpoint */
-    if (db->logger->log_count % CP_FREQUENCY == 0) {
+    if (db->logger->log_count > 0 && db->logger->log_count % CP_FREQUENCY == 0) {
         size_t lsn = db->logger->log_count;
         /* Flush cache */
         if (flush_cache(db, lsn))
@@ -69,6 +56,19 @@ int log_write(DB *db, Record *record) {
             return 1;
         ++db->logger->log_count;
     }
+    /* Write marker */
+    #ifdef _DEBUG_WAL_MODE_
+    printf("0x%08x\t%lu\t%lu\t\n", RECORD_MARKER, db->logger->log_count, record->block_id);
+    #endif /* _DEBUG_WAL_MODE_ */
+    if (-1 == write(db->logger->log_fd, (void *)&RECORD_MARKER, sizeof(RECORD_MARKER)))
+        return 1;
+    /* Write block ID */
+    if (-1 == write(db->logger->log_fd, (void *)&record->block_id, sizeof(record->block_id)))
+        return 1;
+    /* Write block */
+    if (-1 == write_block(db->logger->log_fd, db, record->block_id, record->b))
+        return 1;
+    ++db->logger->log_count;
     return 0;
 }
 
@@ -77,13 +77,32 @@ int log_write(DB *db, Record *record) {
 //+----------------------------------------------------------------------------+
 
 void log_seek(DB *db) {
-    // TODO: seek checkpoint
+    assert(db && db->logger);
 
     #ifdef _DEBUG_WAL_MODE_
     printf(">> Scanning WAL <<\n");
     #endif /* _DEBUG_WAL_MODE_ */
 
+    size_t offset = 0;
+    size_t last_checkpoint = 0;
+    int    marker;
+
+    /* Set read position to the beginning of log */
     lseek(db->logger->log_fd, 0, SEEK_SET);
+
+    /* Seek last checkpoint */
+    while (read(db->logger->log_fd, &marker, sizeof(int)) > 0) {
+
+        if (marker == CHECKPOINT) {
+            /* Checkpoint found */
+            last_checkpoint = offset;
+        }
+
+        offset += 1;
+        lseek(db->logger->log_fd, offset, SEEK_SET);
+    }
+
+    lseek(db->logger->log_fd, last_checkpoint, SEEK_SET);
 }
 
 //+----------------------------------------------------------------------------+
